@@ -78,7 +78,7 @@ undi <-
 
     # Split the data randomly, or by indexing vector, or use a predefined
     # column, based on the length of p_train
-    if (length(train) == 1 & train > 0 & train < 1) {
+    if (length(train) == 1) {
       if(train > 0 & train < 1) {
         # TODO: implement better random split
         data$fold__ <- sample(c("train", "test"),
