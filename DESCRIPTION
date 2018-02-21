@@ -1,0 +1,23 @@
+Package: undi
+Type: Package
+Title: Test for Unjustified Disparate Impact
+Version: 0.0.0.9000
+Authors@R: person("Jongbin", "Jung", email = "me@jongbin.com", role = c("aut", "cre"))
+Description: Test for unjustified disparate impact given decision,
+    outcome, and covariates.
+Depends: R (>= 3.4.2)
+License: GPL-3 | file LICENSE
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    testthat,
+    covr
+Imports:
+    stats,
+    broom,
+    lazyeval,
+    dplyr,
+    magrittr,
+    gbm,
+    purrr
+RoxygenNote: 6.0.1
