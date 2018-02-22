@@ -34,7 +34,9 @@ data}
 first-stage model; using \code{gbm} by default}
 
 \item{pred1}{a function of the form f(model, data) used for generating
-predictions from the first-stage model}
+predictions from the first-stage model; predictions should be on the scale
+that is appropriate for the second stage model, i.e., the second stage
+model will be fit with the formula \code{treatment ~ risk + controls}}
 
 \item{fit2}{a function of the form f(formula, data) used for fitting the
 second-stage model; using \code{glm} with \code{family = binomial} by
@@ -44,6 +46,9 @@ default}
 
 \item{...}{additional arguments passed to first-stage model fitting function,
 \code{fit1}}
+}
+\value{
+Tidy data frame of coefficients fit from second-stage model
 }
 \description{
 Run test for unjustified disparate impact

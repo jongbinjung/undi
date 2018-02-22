@@ -31,10 +31,9 @@
 #'   on the subset of data where \code{treatment == 1}, i.e., \code{risk} is
 #'   generally considered to be P(outcome = 1 | treatment = 1)
 #'
-#' @return Tidy data frame of coefficients fit from second-stage model
+#' @return undi object
 #' @export
-#'
-#' @examples
+# TODO: Update documentation for return type undi
 undi <-
   function(formula,
            data,
@@ -105,7 +104,24 @@ undi <-
 
     test_df <- data[data$fold__ == "test", ]
 
-    .pull_coefs(test_df, treatment, grouping,
+    coefs <- .pull_coefs(test_df, treatment, grouping,
                 c("risk__", controls),
-                fun = fit2)
+                fun = fit2) %>%
+      dplyr::filter(grepl(grouping, term))
+
+    ret <- list(data = data,
+                m1 = m1,
+                treatment = treatment,
+                outcome = outcome,
+                grouping = grouping,
+                features = basefeats,
+                controls = controls,
+                fit1 = fit1,
+                pred1 = pred1,
+                fit2 = fit2,
+                coefs = coefs)
+
+    class(ret) <- c("undi", class(ret))
+
+    return(ret)
   }
