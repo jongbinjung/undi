@@ -32,8 +32,22 @@
 #'   generally considered to be P(outcome = 1 | treatment = 1)
 #'
 #' @return undi object
+#' \item{data}{original data frame, augmented with columns \code{fold__} and
+#' \code{risk__}, which contain train/test fold indicators for the first stage,
+#' and first stage model predictions, respectively}
+#' \item{m1}{fitted first stage model}
+#' \item{treatment}{name of column from \code{data} used as treatment
+#' indicator}
+#' \item{outcome}{name of column from \code{data} used as outcome indicator}
+#' \item{grouping}{name of column from \code{data} used as grouping variable}
+#' \item{features}{additional features used in first stage model}
+#' \item{controls}{legitimate controls used in second stage model}
+#' \item{fit1}{function used to fit first stage model}
+#' \item{pred1}{function used to generate predictions from first stage model}
+#' \item{fit2}{function used to fit second stage model}
+#' \item{coefs}{second stage model coefficients}
+#'
 #' @export
-# TODO: Update documentation for return type undi
 undi <-
   function(formula,
            data,
