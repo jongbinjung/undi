@@ -120,8 +120,9 @@ undi <-
 
     coefs <- .pull_coefs(test_df, treatment, grouping,
                 c("risk__", controls),
-                fun = fit2) %>%
-      dplyr::filter(grepl(grouping, term))
+                fun = fit2)
+
+    coefs <- coefs[grepl(grouping, coefs$term), ]
 
     ret <- list(data = data,
                 m1 = m1,

@@ -4,7 +4,12 @@
 \alias{print.undi}
 \title{\code{print} method of object class \code{\link{undi}}}
 \usage{
-\method{print}{undi}(x)
+\method{print}{undi}(x, ...)
+}
+\arguments{
+\item{x}{an object class undi}
+
+\item{...}{other stuff}
 }
 \description{
 \code{print} method of object class \code{\link{undi}}
