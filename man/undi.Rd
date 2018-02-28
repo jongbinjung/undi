@@ -39,9 +39,11 @@ first-stage model; using \code{gbm} by default}
 predictions from the first-stage model; predictions should be on
 probability scale, while "risk" will always be on logit scale}
 
-\item{fit2}{a function of the form f(formula, data) used for fitting the
-second-stage model; using \code{glm} with \code{family = binomial} by
-default}
+\item{fit2}{a function of the form f(formula, data, weights = NULL) used for
+fitting the second-stage model; using \code{glm} with \code{family =
+quasibinomial} by default; the \code{weights} argument is only used for
+sensitivity and *must* be initialized to \code{NULL} (or the equivalent of
+non-weighted fitting)}
 
 \item{fit_ptreat}{a function of the form f(formula, data, ...) used for
 fitting propensity (probability of treatment) models. If not specified,

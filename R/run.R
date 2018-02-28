@@ -19,9 +19,11 @@
 #' @param pred1 a function of the form f(model, data) used for generating
 #'   predictions from the first-stage model; predictions should be on
 #'   probability scale, while "risk" will always be on logit scale
-#' @param fit2 a function of the form f(formula, data) used for fitting the
-#'   second-stage model; using \code{glm} with \code{family = binomial} by
-#'   default
+#' @param fit2 a function of the form f(formula, data, weights = NULL) used for
+#'   fitting the second-stage model; using \code{glm} with \code{family =
+#'   quasibinomial} by default; the \code{weights} argument is only used for
+#'   sensitivity and *must* be initialized to \code{NULL} (or the equivalent of
+#'   non-weighted fitting)
 #' @param fit_ptreat a function of the form f(formula, data, ...) used for
 #'   fitting propensity (probability of treatment) models. If not specified,
 #'   \code{fit1} is used by default, with the provided \code{formula} argument.
@@ -85,7 +87,6 @@ undi <-
       stop("risk argument must be length 1 of either \"resp_ctl\" or \"resp_trt\"")
     }
 
-
     # Extract treatment/grouping/controls variables from formula
     features <- .extract_features(formula)
 
@@ -107,7 +108,15 @@ undi <-
     }
 
     if (is.null(fit2)) {
-      fit2 <- function(f, d) stats::glm(f, d, family = stats::binomial)
+      fit2 <-
+        function(f, d, w = NULL) {
+          if (is.null(w)) {
+            stats::glm(f, d, family = stats::quasibinomial)
+          } else {
+            d$w___ <- w
+            stats::glm(f, d, weights = d$w___, family = stats::quasibinomial)
+          }
+        }
     }
 
     if (is.null(fit_ptreat) & is.null(ptreat)) {

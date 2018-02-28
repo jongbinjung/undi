@@ -42,6 +42,8 @@ undisens <-
     stop("Expected object of class undi")
   }
 
+  wfit2 <- function(f, d, ...) u$fit2(f, d, w = weights)
+
   d <- u$data
 
   # Initialize columns required for sensitize()
@@ -77,14 +79,26 @@ undisens <-
   d0s <- .expand_params(d[[u$grouping]], d0)
   d1s <- .expand_params(d[[u$grouping]], d1)
 
-  sens_df <- rnr::sensitize(d, q = qs, dp = dps, d0 = d0s, d1 = d1s)
-  sens_df$risk__ <- logit(sens_df[[u$risk_col]])
+  sens_df <- rnr::sensitize(d, q = qs, dp = dps, d0 = d0s, d1 = d1s,
+                            debug = TRUE)
 
-  coefs <- .pull_coefs(sens_df,
+  df_ <- dplyr::bind_rows(sens_df %>% dplyr::mutate(u = 0),
+                          sens_df %>% dplyr::mutate(u = 1))
+
+  df_[[u$treatment]] <- ifelse(df_$u == 0, df_$ptrt_u0__, df_$ptrt_u1__)
+
+  beta__ <- ifelse(u$risk_col == "resp_ctl", df_$beta_ctl__, df_$beta_trt__)
+  delta__ <- ifelse(u$risk_col == "resp_ctl", df_$d0, df_$d1)
+  df_$risk__ <- beta__ + df_$u * delta__
+
+  weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
+
+
+  coefs <- .pull_coefs(df_,
                        u$treatment,
                        u$grouping,
                        c("risk__", u$controls),
-                       fun = u$fit2)
+                       fun = wfit2)
 
   coefs[grepl(u$grouping, coefs$term), ]
 }

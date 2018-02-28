@@ -65,22 +65,22 @@ example_undi <-
 # Sensitivity with uniform parameters
 undisens(
   example_undi,
-  q = log(1.5),
+  q = .45,
   dp = log(1.8),
   d0 = log(2),
   d1 = log(1.5)
   )
-#>    term estimate std.error statistic p.value controls
-#> 3 xblue  0.01957      6938 2.821e-06       1   risk__
+#>    term estimate std.error statistic   p.value controls
+#> 3 xblue  0.02324  0.005581     4.164 3.196e-05   risk__
 
 # Sensitivity with parameters assigned to levels of the grouping variable
 undisens(
   example_undi,
-  q = c(-log(2), log(2)),
+  q = c(.45, .55),
   dp = c(-log(1.2), log(1.5)),
   d0 = c(-log(3), log(3)),
   d1 = c(0, log(1.8))
   )
-#>    term estimate std.error statistic   p.value controls
-#> 3 xblue    5.199    0.6062     8.577 9.698e-18   risk__
+#>    term estimate std.error statistic  p.value controls
+#> 2 xblue  0.02282  0.007369     3.097 0.001969   risk__
 ```
