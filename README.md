@@ -48,19 +48,8 @@ example_undi <-
   distribution = "bernoulli"
   )
 #> Using cv method...
-```
-
-![](README-unnamed-chunk-2-1.png)
-
-    #> Using cv method...
-
-![](README-unnamed-chunk-2-2.png)
-
-    #> Using cv method...
-
-![](README-unnamed-chunk-2-3.png)
-
-``` r
+#> Using cv method...
+#> Using cv method...
 
 # Sensitivity with uniform parameters
 undisens(

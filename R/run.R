@@ -102,9 +102,10 @@ undi <-
     }
 
     if (is.null(pred1)) {
-      pred1 <- function(m, d) gbm::predict.gbm(m, d,
-                                               gbm::gbm.perf(m),
-                                               type = "response")
+      pred1 <- function(m, d)
+        gbm::predict.gbm(m, d,
+                         gbm::gbm.perf(m, plot.it = FALSE),
+                         type = "response")
     }
 
     if (is.null(fit2)) {

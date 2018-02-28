@@ -28,7 +28,7 @@ devtools::install_github("jongbinjung/undi")
 
 ## Example
 
-```{r, cache=TRUE, warning=FALSE, message=FALSE}
+```{r examples, cache=TRUE, warning=FALSE, message=FALSE}
 library(undi)
 library(tidyverse)
 inv_logit <- stats::binomial()$linkinv
