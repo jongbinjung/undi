@@ -104,7 +104,7 @@ undi <-
     if (is.null(pred1)) {
       pred1 <- function(m, d)
         gbm::predict.gbm(m, d,
-                         gbm::gbm.perf(m, plot.it = FALSE),
+                         gbm::gbm.perf(m, plot.it = FALSE, method = "cv"),
                          type = "response")
     }
 
