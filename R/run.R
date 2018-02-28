@@ -159,6 +159,7 @@ undi <-
       m1_trt <- fit1(formula1, train_df[treated_train_ind, ], ...)
       data$resp_trt__ <- pred1(m1_trt, data)
     } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
+      m1_trt <- "Custom values of resp_trt provided"
       data$resp_trt__ <- resp_trt
     } else {
       stop("Bad specification of argument: resp_trt")
@@ -168,6 +169,7 @@ undi <-
       m1_ctl <- fit1(formula1, train_df[!treated_train_ind, ], ...)
       data$resp_ctl__ <- pred1(m1_ctl, data)
     } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
+      m1_ctl <- "Custom values of resp_ctl provided"
       data$resp_ctl__ <- resp_ctl
     } else {
       stop("Bad specification of argument: resp_ctl")
