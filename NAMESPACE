@@ -2,4 +2,5 @@
 
 S3method(print,undi)
 export(undi)
-importFrom(magrittr,"%>%")
+export(undisens)
+importFrom(dplyr,"%>%")

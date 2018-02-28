@@ -13,11 +13,10 @@ Suggests:
     testthat,
     covr
 Imports:
+    rnr,
     stats,
     broom,
     lazyeval,
     dplyr,
-    magrittr,
-    gbm,
-    purrr
+    gbm
 RoxygenNote: 6.0.1
