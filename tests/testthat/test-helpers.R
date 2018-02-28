@@ -30,3 +30,59 @@ test_that(".extract_features extracts interactions", {
 
   expect_equal(generated, target)
 })
+
+
+# Test .expand_params() ---------------------------------------------------
+test_that(".extract_params works for atomic parameters", {
+  g <- factor(rep(c("a", "b", "c"), 3))
+  p <- 1.23
+
+  target <- rep(p, length(g))
+  generated <- .expand_params(g, p)
+
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params works for parameters mapped to levels", {
+  g <- factor(sample(c("a", "b", "c"), 10, replace = TRUE))
+  p <- seq(1, length(levels(g)))
+
+  target <- p[as.numeric(g)]
+  generated <- .expand_params(g, p)
+
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params works for parameters with equal size as group", {
+  g <- factor(sample(c("a", "b", "c"), 10, replace = TRUE))
+  p <- rnorm(10)
+
+  target <- p
+  generated <- .expand_params(g, p)
+
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params throws errors for wrong specification", {
+  g <- sample(c("a", "b", "c"), 10, replace = TRUE)
+
+  # Level-length assignment for non-factor groupings
+  p <- seq(1, length(unique(g)))
+  expect_error(.expand_params(g, p))
+
+  # Parameters of bad length
+  p <- seq(1, length(g) + 1)
+  expect_error(.expand_params(g, p))
+
+  p <- seq(1, length(g) - 1)
+  expect_error(.expand_params(g, p))
+
+  p <- c(1, 2)
+  expect_error(.expand_params(g, p))
+
+  p <- NULL
+  expect_error(.expand_params(g, p))
+
+  p <- 1:1e4
+  expect_error(.expand_params(g, p))
+})

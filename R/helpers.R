@@ -53,3 +53,31 @@ inv_logit <- stats::binomial()$linkinv
 
   list(treat = treat, group = group, feats = feats)
 }
+
+#' Expand parameters by length
+#'
+#' Used for determining how to apply sensitivity parameters
+#'
+#' @param g vector of grouping variable
+#' @param p paramter in size of either 1, equal to the number of levels in
+#'   \code{g}, or equal to the length of \code{g}
+#'
+#' @return vector of parameter \code{p} appropriately expanded
+.expand_params <- function(g, p) {
+  len <- length(p)
+
+  if (len == 1) {
+    return(rep(p, length(g)))
+  } else if (is.factor(g) & len == length(levels(g))) {
+    return(p[as.numeric(g)])
+  } else if (len == length(g)) {
+    return(p)
+  } else {
+    stop("Mis-specified parameter assignments to grouping variable.\n\t",
+         "Expecting parameters of length 1",
+         if(is.factor(g)) paste0(", ", length(levels(g)), ","),
+         " or ", length(g), "\n\t",
+         "Received parameter of length: ", length(p))
+  }
+}
+
