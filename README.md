@@ -14,3 +14,73 @@ You can install undi from github with:
 # install.packages("devtools")
 devtools::install_github("jongbinjung/undi")
 ```
+
+Example
+-------
+
+``` r
+library(undi)
+library(tidyverse)
+inv_logit <- stats::binomial()$linkinv
+
+N <- 2000
+set.seed(1)
+data <- tibble(id = rep(1:N)) %>%
+  mutate(
+  m = rnorm(N, 0, 1),
+  x = factor(rep(c("red", "blue"), N / 2)),
+  x = fct_relevel(x, "red"),
+  z = rnorm(N, m, 2),
+  c = rnorm(N, m, 2),
+  e1 = rnorm(N, 0, 0.05),
+  e2 = rnorm(N, 0, 0.05),
+  risk = 1 + 0.05 * (x == "blue") + 0.25 * z + c + e1,
+  a = inv_logit(risk + e2) > .5,
+  y = inv_logit(risk) > .5
+  )
+
+example_undi <-
+  undi(
+  a ~ x + z + c,
+  data,
+  outcome = "y",
+  cv.folds = 2,
+  distribution = "bernoulli"
+  )
+#> Using cv method...
+```
+
+![](README-unnamed-chunk-2-1.png)
+
+    #> Using cv method...
+
+![](README-unnamed-chunk-2-2.png)
+
+    #> Using cv method...
+
+![](README-unnamed-chunk-2-3.png)
+
+``` r
+
+# Sensitivity with uniform parameters
+undisens(
+  example_undi,
+  q = log(1.5),
+  dp = log(1.8),
+  d0 = log(2),
+  d1 = log(1.5)
+  )
+#>    term estimate std.error statistic p.value controls
+#> 3 xblue  0.01957      6938 2.821e-06       1   risk__
+
+# Sensitivity with parameters assigned to levels of the grouping variable
+undisens(
+  example_undi,
+  q = c(-log(2), log(2)),
+  dp = c(-log(1.2), log(1.5)),
+  d0 = c(-log(3), log(3)),
+  d1 = c(0, log(1.8))
+  )
+#>    term estimate std.error statistic   p.value controls
+#> 3 xblue    5.199    0.6062     8.577 9.698e-18   risk__
+```
