@@ -1,9 +1,9 @@
 #' Run test for unjustified disparate impact
 #'
 #' @param formula a formula in the form of \code{treatment ~ grouping_variable +
-#'   other controls} where the LHS is the treatment column, first element on the
-#'   RHS is the grouping variable (e.g., Race), and the remainder of the RHS
-#'   specifies the form of controls
+#'   other predictors} where the LHS is the treatment column, first element on
+#'   the RHS is the grouping variable (e.g., Race), and the remainder of the RHS
+#'   specifies the predictors for first-stage model
 #' @param data data frame to use; must include all the columns specified in
 #'   \code{formula} and given in the \code{outcome} parameter
 #' @param outcome name of outcome column in data
@@ -17,35 +17,48 @@
 #' @param fit1 a function of the form f(formula, data, ...) used for fitting the
 #'   first-stage model; using \code{gbm} by default
 #' @param pred1 a function of the form f(model, data) used for generating
-#'   predictions from the first-stage model; predictions should be on the scale
-#'   that is appropriate for the second stage model, i.e., the second stage
-#'   model will be fit with the formula \code{treatment ~ risk + controls}
+#'   predictions from the first-stage model; predictions should be on
+#'   probability scale, while "risk" will always be on logit scale
 #' @param fit2 a function of the form f(formula, data) used for fitting the
 #'   second-stage model; using \code{glm} with \code{family = binomial} by
 #'   default
+#' @param fit_ptreat a function of the form f(formula, data, ...) used for
+#'   fitting propensity (probability of treatment) models. If not specified,
+#'   \code{fit1} is used by default, with the provided \code{formula} argument.
+#' @param pred_ptreat a function of the form f(model, data) used for generating
+#'   propensity predictions. If not specified, \code{pred1} is used by default.
+#' @param risk One of \code{"resp_ctl"} or \code{"resp_trt"}, indicating which
+#'   treatment regime should be used as the risk score (default:
+#'   \code{resp_trt})
+#' @param ptreat (Optional) default value for probability of treatment; if
+#'   provided, it will override \code{fit_ptreat} and \code{pred_ptreat}
+#' @param resp_ctl (Optional)
+#' @param resp_trt (Optional) default value for probability of response = 1
+#'   given each treatment regime (\code{ctl}, \code{trt}); useful for cases
+#'   where outcome under certain treatment regimes is deterministic (e.g.,
+#'   probability of finding illegal weapon if NOT frisked is 0)
 #' @param seed random seed to use
 #' @param ... additional arguments passed to first-stage model fitting function,
-#'   \code{fit1}
+#'   \code{fit1} and \code{fit_ptreat}
 #'
-#' @details The first-stage model, which estimates \code{risk} is always trained
-#'   on the subset of data where \code{treatment == 1}, i.e., \code{risk} is
-#'   generally considered to be P(outcome = 1 | treatment = 1)
-#'
-#' @return undi object
-#' \item{data}{original data frame, augmented with columns \code{fold__} and
-#' \code{risk__}, which contain train/test fold indicators for the first stage,
-#' and first stage model predictions, respectively}
-#' \item{m1}{fitted first stage model}
-#' \item{treatment}{name of column from \code{data} used as treatment
-#' indicator}
-#' \item{outcome}{name of column from \code{data} used as outcome indicator}
-#' \item{grouping}{name of column from \code{data} used as grouping variable}
-#' \item{features}{additional features used in first stage model}
-#' \item{controls}{legitimate controls used in second stage model}
-#' \item{fit1}{function used to fit first stage model}
-#' \item{pred1}{function used to generate predictions from first stage model}
-#' \item{fit2}{function used to fit second stage model}
-#' \item{coefs}{second stage model coefficients}
+#' @return undi object \item{data}{original data frame, augmented with columns
+#'   \code{fold__}, \code{ptrt__}, \code{resp_ctl__}, \code{resp_trt__}, and
+#'   \code{risk__}, which contain train/test fold indicators for the first
+#'   stage, treatment propesinty, first stage model probability predictions
+#'   under control and treatment, and appropriate risk measure on logit-scale,
+#'   respectively} \item{risk_col}{either "resp_ctl" or "resp_trt", indicating
+#'   which was used for "risk"}\item{m1_*}{fitted first stage model for response
+#'   give ctl/trt} \item{treatment}{name of column from \code{data} used as
+#'   treatment indicator} \item{outcome}{name of column from \code{data} used as
+#'   outcome indicator} \item{grouping}{name of column from \code{data} used as
+#'   grouping variable} \item{features}{additional features used in first stage
+#'   model} \item{controls}{legitimate controls used in second stage model}
+#'   \item{fit1}{function used to fit first stage model} \item{pred1}{function
+#'   used to generate predictions from first stage model} \item{fit2}{function
+#'   used to fit second stage model} \item{fit_ptreat}{function used to fit
+#'   model for treatment propensity} \item{pred_ptreat}{function used to
+#'   generate predictions for treatment propensity} \item{coefs}{second stage
+#'   model coefficients}
 #'
 #' @export
 undi <-
@@ -57,9 +70,21 @@ undi <-
            fit1 = NULL,
            pred1 = NULL,
            fit2 = NULL,
+           fit_ptreat = NULL,
+           pred_ptreat = NULL,
+           risk = "resp_trt",
+           ptreat = NULL,
+           resp_ctl = NULL,
+           resp_trt = NULL,
            seed = 1234,  # TODO: set seed randomly
            ...) {
     set.seed(seed)
+
+    # Input validation
+    if (length(risk) != 1 || !(risk %in% c("resp_ctl", "resp_trt"))) {
+      stop("risk argument must be length 1 of either \"resp_ctl\" or \"resp_trt\"")
+    }
+
 
     # Extract treatment/grouping/controls variables from formula
     features <- .extract_features(formula)
@@ -78,11 +103,19 @@ undi <-
     if (is.null(pred1)) {
       pred1 <- function(m, d) gbm::predict.gbm(m, d,
                                                gbm::gbm.perf(m),
-                                               type = "link")
+                                               type = "response")
     }
 
     if (is.null(fit2)) {
       fit2 <- function(f, d) stats::glm(f, d, family = stats::binomial)
+    }
+
+    if (is.null(fit_ptreat) & is.null(ptreat)) {
+      fit_ptreat <- fit1
+    }
+
+    if (is.null(pred_ptreat) & is.null(ptreat)) {
+      pred_ptreat <- pred1
     }
 
     # Generate formulas for first and second stage models
@@ -112,9 +145,39 @@ undi <-
     train_df <- data[data$fold__ == "train", ]
     treated_train_ind <- train_df[[treatment]] == 1
 
-    # Fit first-stage model
-    m1 <- fit1(formula1, train_df[treated_train_ind, ], ...)
-    data$risk__ <- pred1(m1, data)
+    # Fit first-stage models
+    if (is.null(resp_trt)) {
+      m1_trt <- fit1(formula1, train_df[treated_train_ind, ], ...)
+      data$resp_trt__ <- pred1(m1_trt, data)
+    } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
+      data$resp_trt__ <- resp_trt
+    } else {
+      stop("Bad specification of argument: resp_trt")
+    }
+
+    if (is.null(resp_ctl)) {
+      m1_ctl <- fit1(formula1, train_df[!treated_train_ind, ], ...)
+      data$resp_ctl__ <- pred1(m1_ctl, data)
+    } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
+      data$resp_ctl__ <- resp_ctl
+    } else {
+      stop("Bad specification of argument: resp_ctl")
+    }
+
+    if (is.null(ptreat)) {
+      m_ptrt <- fit_ptreat(formula, train_df, ...)
+      data$ptrt__ <- pred1(m_ptrt, data)
+    } else if (length(ptreat) == nrow(data) | length(ptreat) == 1) {
+      # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
+      # specified but ignored
+      fit_ptreat <- "Overrided with custom values for ptreat"
+      pred_ptreat <- "Overrided with custom values for ptreat"
+      data$ptrt__ <- ptreat
+    } else {
+      stop("Bad specification of argument: ptreat")
+    }
+
+    data$risk__ <- logit(data[[paste0(risk, "__")]])
 
     test_df <- data[data$fold__ == "test", ]
 
@@ -125,7 +188,9 @@ undi <-
     coefs <- coefs[grepl(grouping, coefs$term), ]
 
     ret <- list(data = data,
-                m1 = m1,
+                m1_ctl = m1_ctl,
+                m1_trt = m1_trt,
+                risk_col = risk,
                 treatment = treatment,
                 outcome = outcome,
                 grouping = grouping,
@@ -133,6 +198,8 @@ undi <-
                 controls = controls,
                 fit1 = fit1,
                 pred1 = pred1,
+                fit_ptreat = fit_ptreat,
+                pred_ptreat = pred_ptreat,
                 fit2 = fit2,
                 coefs = coefs)
 

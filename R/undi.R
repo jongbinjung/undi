@@ -5,5 +5,5 @@
 #'
 #' @docType package
 #' @name undi
-#' @importFrom magrittr %>%
+#' @importFrom dplyr %>%
 NULL
