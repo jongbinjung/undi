@@ -114,8 +114,8 @@ undi <-
           if (is.null(w)) {
             stats::glm(f, d, family = stats::quasibinomial)
           } else {
-            d$w___ <- w
-            stats::glm(f, d, weights = d$w___, family = stats::quasibinomial)
+            d$w <- w
+            stats::glm(f, d, weights = w, family = stats::quasibinomial)
           }
         }
     }
