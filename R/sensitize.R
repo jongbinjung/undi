@@ -52,7 +52,6 @@ undisens <-
     stop("Expected object of class undi")
   }
 
-  wlm <- function(f, d) glm(f, d, weights = weights, family = "quasibinomial")
   wfit2 <- function(f, d, ...) u$fit2(f, d, w = weights)
 
   d <- u$data
@@ -137,13 +136,15 @@ undisens <-
   }
   df_$risk__ <- beta__ + df_$u * delta__
 
-  df_$weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
+  weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
+
+  df_$weights <- weights
 
   coefs <- .pull_coefs(df_,
                        u$treatment,
                        u$grouping,
                        c("risk__", u$controls),
-                       fun = wlm)
+                       fun = wfit2)
 
   ret <- coefs[grepl(u$grouping, coefs$term), ]
 
