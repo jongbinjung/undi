@@ -20,6 +20,8 @@
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0); if provided, it
 #'   will override fitted values in \code{u$data}
+#' @param debug logical flag, if TRUE, returns a list of results and the
+#'   expanded data frame used to fit model
 #'
 #' @details All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
 #'   one of three formats, determined by the \code{length} of each argument:
@@ -43,7 +45,8 @@ undisens <-
            compare = NULL,
            ptreat = NULL,
            resp_ctl = NULL,
-           resp_trt = NULL) {
+           resp_trt = NULL,
+           debug = FALSE) {
 
   if (!("undi" %in% class(u))) {
     stop("Expected object of class undi")
@@ -135,11 +138,17 @@ undisens <-
 
   weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
 
+  df_$weights <- weights
+
   coefs <- .pull_coefs(df_,
                        u$treatment,
                        u$grouping,
                        c("risk__", u$controls),
                        fun = wfit2)
 
-  coefs[grepl(u$grouping, coefs$term), ]
+  ret <- coefs[grepl(u$grouping, coefs$term), ]
+
+  if (debug) {
+    ret <- list(df_, ret)
+  }
 }
