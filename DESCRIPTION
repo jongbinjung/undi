@@ -15,6 +15,7 @@ Suggests:
 Imports:
     rnr,
     stats,
+    forcats,
     broom,
     lazyeval,
     dplyr,

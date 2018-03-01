@@ -4,7 +4,7 @@
 \alias{undisens}
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
-undisens(u, q, dp, d0, d1, ptreat = NULL, resp_ctl = NULL,
+undisens(u, q, dp, d0, d1, compare = NULL, ptreat = NULL, resp_ctl = NULL,
   resp_trt = NULL)
 }
 \arguments{
@@ -20,6 +20,12 @@ Details)}
 \item{d1}{change in log-odds of response = 1 of treat = 1 and u = 1 (see
 Details)}
 
+\item{compare}{(Optional) character vector of groups to compare; the data
+will be filtered such that only specified groups are compared, and the
+\code{grouping} variable will be refactored such that the levels preserve
+the specified order, e.g., \code{compare = c("white", "black")} will make
+\code{"white"} the base group}
+
 \item{ptreat}{(Optional) default value for probability of treatment; if
 provided, it will override fitted values in \code{u$data}}
 
@@ -28,8 +34,8 @@ provided, it will override fitted values in \code{u$data}}
 \item{resp_trt}{(Optional) default value for probability of response = 1
 given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 where outcome under certain treatment regimes is deterministic (e.g.,
-probability of finding illegal weapon if NOT frisked is 0); if provided,
-it will override fitted values in \code{u$data}}
+probability of finding illegal weapon if NOT frisked is 0); if provided, it
+will override fitted values in \code{u$data}}
 }
 \value{
 \code{tidy} dataframe of second-stage model coefficients after
@@ -45,5 +51,6 @@ All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
   observations (rows)} \item{if \code{length(arg) = }number of levels in
   grouping variable}{each parameter setting applied to corresponding level in
   group} \item{if \code{length(arg) = nrow(u$data)}}{each parameter applied
-  to corresponding rows}}
+  to corresponding rows}} Note that if \code{compare} is specified, the
+  number of grouping levels is effectively the length of \code{compare}
 }
