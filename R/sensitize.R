@@ -87,12 +87,20 @@ undisens <-
 
   df_[[u$treatment]] <- ifelse(df_$u == 0, df_$ptrt_u0__, df_$ptrt_u1__)
 
-  beta__ <- ifelse(u$risk_col == "resp_ctl", df_$beta_ctl__, df_$beta_trt__)
-  delta__ <- ifelse(u$risk_col == "resp_ctl", df_$d0, df_$d1)
+  if (u$risk_col == "resp_ctl") {
+    beta__ <- df_$beta_ctl__
+    delta__ <- df_$d0
+  } else if (u$risk_col == "resp_trt") {
+    beta__ <- df_$beta_trt__
+    delta__ <- df_$d1
+  } else {
+    stop("Misspecified risk_col in undi object.\n\t",
+         "Expected either resp_ctl or resp_trt\n\t",
+         "Got: ", u$risk_col)
+  }
   df_$risk__ <- beta__ + df_$u * delta__
 
   weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
-
 
   coefs <- .pull_coefs(df_,
                        u$treatment,
