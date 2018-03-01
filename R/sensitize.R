@@ -151,4 +151,6 @@ undisens <-
   if (debug) {
     ret <- list(df_, ret)
   }
+
+  ret
 }
