@@ -81,3 +81,19 @@ inv_logit <- stats::binomial()$linkinv
   }
 }
 
+#' Extract sensitivity parameters from a list of parameters for optimization
+#'
+#' @param params vector of parameters
+#'
+#' @return named list of parameters
+.extract_params <- function(params) {
+  list(qb  = params[1],
+       qm  = params[2],
+       ab  = params[3],
+       am  = params[4],
+       d0b = params[5],
+       d0m = params[6],
+       d1b = params[7],
+       d1m = params[8])
+}
+

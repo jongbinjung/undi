@@ -33,7 +33,7 @@ test_that(".extract_features extracts interactions", {
 
 
 # Test .expand_params() ---------------------------------------------------
-test_that(".extract_params works for atomic parameters", {
+test_that(".expand_params works for atomic parameters", {
   g <- factor(rep(c("a", "b", "c"), 3))
   p <- 1.23
 
@@ -43,7 +43,7 @@ test_that(".extract_params works for atomic parameters", {
   expect_equal(generated, target)
 })
 
-test_that(".extract_params works for parameters mapped to levels", {
+test_that(".expand_params works for parameters mapped to levels", {
   g <- factor(sample(c("a", "b", "c"), 10, replace = TRUE))
   p <- seq(1, length(levels(g)))
 
@@ -53,7 +53,7 @@ test_that(".extract_params works for parameters mapped to levels", {
   expect_equal(generated, target)
 })
 
-test_that(".extract_params works for parameters with equal size as group", {
+test_that(".expand_params works for parameters with equal size as group", {
   g <- factor(sample(c("a", "b", "c"), 10, replace = TRUE))
   p <- rnorm(10)
 
@@ -63,7 +63,7 @@ test_that(".extract_params works for parameters with equal size as group", {
   expect_equal(generated, target)
 })
 
-test_that(".extract_params throws errors for wrong specification", {
+test_that(".expand_params throws errors for wrong specification", {
   g <- sample(c("a", "b", "c"), 10, replace = TRUE)
 
   # Level-length assignment for non-factor groupings
@@ -86,3 +86,20 @@ test_that(".extract_params throws errors for wrong specification", {
   p <- 1:1e4
   expect_error(.expand_params(g, p))
 })
+
+# Test .extract_params() --------------------------------------------------
+test_that(".extract_params maps as expected", {
+  params <- runif(8)
+  target <- list(qw  = params[1],
+                 qm  = params[2],
+                 aw  = params[3],
+                 am  = params[4],
+                 d0w = params[5],
+                 d0m = params[6],
+                 d1w = params[7],
+                 d1m = params[8])
+  generated <- .extract_params(params)
+
+  expect_equal(generated, target)
+})
+
