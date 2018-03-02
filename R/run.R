@@ -234,7 +234,7 @@ undi <-
 #' @return tidy data frame of rad coefficients
 #'
 #' @export
-compute.rad <-
+compute_rad <-
   function(r,
            controls = NULL,
            base_group = NULL,
@@ -280,7 +280,7 @@ compute.rad <-
     formula2 <- .make_formula(r$treatment, c("risk__", r$grouping, controls))
     test_df <- d[d$fold__ == "test", ]
 
-    ret <- map_dfr(minority_groups, function(comp) {
+    ret <- purrr::map_dfr(minority_groups, function(comp) {
       target_group_ind <- test_df[[r$grouping]] %in% c(base_group, comp)
 
       tmp_df <- test_df[target_group_ind, ]

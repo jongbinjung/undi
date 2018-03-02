@@ -20,5 +20,6 @@ Imports:
     broom,
     lazyeval,
     dplyr,
+    purrr,
     gbm
 RoxygenNote: 6.0.1

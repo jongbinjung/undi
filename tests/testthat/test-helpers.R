@@ -89,14 +89,14 @@ test_that(".expand_params throws errors for wrong specification", {
 
 # Test .extract_params() --------------------------------------------------
 test_that(".extract_params maps as expected", {
-  params <- runif(8)
-  target <- list(qw  = params[1],
+  params <- stats::runif(8)
+  target <- list(qb  = params[1],
                  qm  = params[2],
-                 aw  = params[3],
+                 ab  = params[3],
                  am  = params[4],
-                 d0w = params[5],
+                 d0b = params[5],
                  d0m = params[6],
-                 d1w = params[7],
+                 d1b = params[7],
                  d1m = params[8])
   generated <- .extract_params(params)
 
