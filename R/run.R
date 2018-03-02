@@ -1,4 +1,4 @@
-#' Run test for unjustified disparate impact
+#' Create rad object
 #'
 #' @param formula a formula in the form of \code{treatment ~ grouping_variable +
 #'   other predictors} where the LHS is the treatment column, first element on
@@ -218,4 +218,32 @@ undi <-
     class(ret) <- c("undi", class(ret))
 
     return(ret)
+  }
+
+#' Run test for unjustified disparate impact
+#'
+#' @param r object of class rad ("undi")
+#' @param controls character vector of additional controls to consider in the
+#'   second-stage model
+#'
+#' @return tidy data frame of rad coefficients
+#'
+#' @export
+compute.rad <-
+  function(r, controls = NULL) {
+    if (!("undi" %in% class(r))) {
+      stop("Expected object of class undi")
+    }
+
+    data <- r$data
+
+    formula2 <- .make_formula(r$treatment, c("risk__", r$grouping, controls))
+
+    test_df <- data[data$fold__ == "test", ]
+
+    coefs <- .pull_coefs(test_df, r$treatment, r$grouping,
+                         c("risk__", controls),
+                         fun = r$fit2)
+
+    coefs[grepl(r$grouping, coefs$term), ]
   }
