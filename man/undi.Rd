@@ -5,7 +5,7 @@
 \alias{undi}
 \alias{undi}
 \alias{undi-package}
-\title{Run test for unjustified disparate impact}
+\title{Create rad object}
 \usage{
 undi(formula, data, outcome, controls = NULL, train = 0.5, fit1 = NULL,
   pred1 = NULL, fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL,
@@ -92,7 +92,7 @@ undi object \item{data}{original data frame, augmented with columns
   model coefficients}
 }
 \description{
-Run test for unjustified disparate impact
+Create rad object
 
 The \code{undi} package implements a test for unjustified disparate impact in
 policy decisions.

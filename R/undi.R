@@ -6,4 +6,7 @@
 #' @docType package
 #' @name undi
 #' @importFrom dplyr %>%
+#' @importFrom foreach %:%
+#' @importFrom foreach %dopar%
+#' @importFrom foreach foreach
 NULL

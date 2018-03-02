@@ -9,12 +9,13 @@ Depends: R (>= 3.4.0)
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-Suggests: 
+Suggests:
     testthat,
     covr
 Imports:
     rnr,
     stats,
+    foreach,
     forcats,
     broom,
     lazyeval,

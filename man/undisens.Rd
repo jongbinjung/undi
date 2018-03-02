@@ -5,7 +5,7 @@
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
 undisens(u, q, dp, d0, d1, compare = NULL, ptreat = NULL, resp_ctl = NULL,
-  resp_trt = NULL, debug = FALSE)
+  resp_trt = NULL, verbose = interactive(), debug = FALSE)
 }
 \arguments{
 \item{u}{object of class \code{undi}}
@@ -36,6 +36,8 @@ given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 where outcome under certain treatment regimes is deterministic (e.g.,
 probability of finding illegal weapon if NOT frisked is 0); if provided, it
 will override fitted values in \code{u$data}}
+
+\item{verbose}{logical flag, if TRUE, print relevant messages for user}
 
 \item{debug}{logical flag, if TRUE, returns a list of results and the
 expanded data frame used to fit model}
