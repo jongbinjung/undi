@@ -4,13 +4,21 @@
 \alias{compute.rad}
 \title{Run test for unjustified disparate impact}
 \usage{
-compute.rad(r, controls = NULL)
+\method{compute}{rad}(r, controls = NULL, base_group = NULL,
+  minority_groups = NULL)
 }
 \arguments{
 \item{r}{object of class rad ("undi")}
 
 \item{controls}{character vector of additional controls to consider in the
 second-stage model}
+
+\item{(Optional)}{base_group single group that acts as the pivot/base; by
+default, if the grouping variable is a factor, set to the first level,
+otherwise set to the first of sorted unique values}
+
+\item{(Optional)}{minority_groups groups to compare to the base group; by
+default, set to every unique value other than the base group}
 }
 \value{
 tidy data frame of rad coefficients

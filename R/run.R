@@ -225,25 +225,75 @@ undi <-
 #' @param r object of class rad ("undi")
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
+#' @param (Optional) base_group single group that acts as the pivot/base; by
+#'   default, if the grouping variable is a factor, set to the first level,
+#'   otherwise set to the first of sorted unique values
+#' @param (Optional) minority_groups groups to compare to the base group; by
+#'   default, set to every unique value other than the base group
 #'
 #' @return tidy data frame of rad coefficients
 #'
 #' @export
 compute.rad <-
-  function(r, controls = NULL) {
+  function(r,
+           controls = NULL,
+           base_group = NULL,
+           minority_groups = NULL) {
+    # Input validation
     if (!("undi" %in% class(r))) {
       stop("Expected object of class undi")
     }
 
-    data <- r$data
+    if (length(base_group) > 1) {
+      stop("Specify a single base group.\n\tGot: ", base_group)
+    }
+
+    d <- r$data
+    group_col <- d[[r$grouping]]
+    members <- unique(group_col)
+
+    check_groups <- sapply(c(base_group, minority_groups),
+                           function(x) x %in% members)
+    if (!all(check_groups)) {
+      stop(sprintf("%s - not members of %s",
+                   paste0(c(base_group, minority_groups)[!check_groups],
+                          collapse = ","),
+                   r$grouping))
+    }
+
+    if (is.null(base_group)) {
+      if (is.factor(group_col)) {
+        base_group <- levels(group_col)[1]
+      } else {
+        base_group <- unique(group_col)[1]
+      }
+    }
+
+    if (is.null(minority_groups)) {
+      if (is.factor(group_col)) {
+        minority_groups <- levels(group_col)[-1]
+      } else {
+        minority_groups <- unique(group_col)[-1]
+      }
+    }
 
     formula2 <- .make_formula(r$treatment, c("risk__", r$grouping, controls))
+    test_df <- d[d$fold__ == "test", ]
 
-    test_df <- data[data$fold__ == "test", ]
+    ret <- map_dfr(minority_groups, function(comp) {
+      target_group_ind <- test_df[[r$grouping]] %in% c(base_group, comp)
 
-    coefs <- .pull_coefs(test_df, r$treatment, r$grouping,
-                         c("risk__", controls),
-                         fun = r$fit2)
+      tmp_df <- test_df[target_group_ind, ]
+      tmp_df[[r$grouping]] <- forcats::fct_drop(tmp_df[[r$grouping]])
+      tmp_df[[r$grouping]] <- forcats::fct_relevel(tmp_df[[r$grouping]],
+                                                   base_group)
 
-    coefs[grepl(r$grouping, coefs$term), ]
+      coefs <- .pull_coefs(tmp_df, r$treatment, r$grouping,
+                           c("risk__", controls),
+                           fun = r$fit2)
+
+      coefs[grepl(r$grouping, coefs$term), ]
+    })
+
+    return(ret)
   }
