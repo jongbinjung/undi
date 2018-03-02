@@ -20,6 +20,7 @@
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0); if provided, it
 #'   will override fitted values in \code{u$data}
+#' @param verbose logical flag, if TRUE, print relevant messages for user
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
 #'
@@ -46,6 +47,7 @@ undisens <-
            ptreat = NULL,
            resp_ctl = NULL,
            resp_trt = NULL,
+           verbose = interactive(),
            debug = FALSE) {
 
   if (!("undi" %in% class(u))) {
@@ -75,11 +77,13 @@ undisens <-
   }
 
   if (is.factor(d[[u$grouping]])) {
-    message(sprintf("Comparing %s=%s against %s={%s}",
-                    u$grouping,
-                    levels(d[[u$grouping]])[1],
-                    u$grouping,
-                    paste0(levels(d[[u$grouping]])[-1], collapse = ", ")))
+    if (verbose) {
+      message(sprintf("Comparing %s=%s against %s={%s}",
+                      u$grouping,
+                      levels(d[[u$grouping]])[1],
+                      u$grouping,
+                      paste0(levels(d[[u$grouping]])[-1], collapse = ", ")))
+    }
   }
 
   # Initialize columns required for sensitize()
