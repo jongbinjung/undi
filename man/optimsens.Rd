@@ -4,12 +4,12 @@
 \alias{optimsens}
 \title{Find parameter values that min/maximize undi results}
 \usage{
-optimsens(u, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
-  log(2)), range_d1 = c(0, log(2)), optim_params = NULL,
-  base_group = NULL, minority_groups = NULL, debug = FALSE)
+optimsens(r, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
+  log(2)), range_d1 = c(0, log(2)), base_group = NULL,
+  minority_groups = NULL, debug = FALSE)
 }
 \arguments{
-\item{u}{object of class \code{undi}}
+\item{r}{object of class \code{undi}}
 
 \item{range_q}{2D vector specifying min/max value of p(u = 1 | x)}
 
@@ -22,15 +22,15 @@ response = 1 if treat = 0 and u = 1}
 \item{range_d1}{2D vector specifying min/max value of change in log-odds of
 response = 1 of treat = 1 and u = 1}
 
-\item{debug}{logical flag, if TRUE, returns a list of results and the
-expanded data frame used to fit model}
-
-\item{(Optional)}{base_group single group that acts as the pivot/base; by
+\item{base_group}{(Optional) single group that acts as the pivot/base; by
 default, if the grouping variable is a factor, set to the first level,
 otherwise set to the first of sorted unique values}
 
-\item{(Optional)}{minority_groups groups to compare to the base group; by
+\item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
+
+\item{debug}{logical flag, if TRUE, returns a list of results and the
+expanded data frame used to fit model}
 }
 \value{
 \code{tidy} dataframe of second-stage model coefficients after

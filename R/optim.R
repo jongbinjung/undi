@@ -3,7 +3,7 @@
 #' Within specified range of sensitivity parameters, find the ones that achieve
 #' minimum/maximum undi results
 #'
-#' @param u object of class \code{undi}
+#' @param r object of class \code{undi}
 #' @param range_q 2D vector specifying min/max value of p(u = 1 | x)
 #' @param range_dp 2D vector specifying min/max value of change in log-odds of
 #'   treat = 1 if u = 1
@@ -11,10 +11,10 @@
 #'   response = 1 if treat = 0 and u = 1
 #' @param range_d1 2D vector specifying min/max value of change in log-odds of
 #'   response = 1 of treat = 1 and u = 1
-#' @param (Optional) base_group single group that acts as the pivot/base; by
+#' @param base_group (Optional) single group that acts as the pivot/base; by
 #'   default, if the grouping variable is a factor, set to the first level,
 #'   otherwise set to the first of sorted unique values
-#' @param (Optional) minority_groups groups to compare to the base group; by
+#' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
@@ -33,17 +33,16 @@
 #'
 #' @export
 optimsens <-
-  function(u,
+  function(r,
            range_q = c(0, 1),
            range_dp = c(0, log(2)),
            range_d0 = c(0, log(2)),
            range_d1 = c(0, log(2)),
-           optim_params = NULL,
            base_group = NULL,
            minority_groups = NULL,
            debug = FALSE) {
   # Input validation
-  if (!("undi" %in% class(u))) {
+  if (!("undi" %in% class(r))) {
     stop("Expected object of class undi")
   }
 
@@ -56,7 +55,7 @@ optimsens <-
   # range_d0 = c(0, log(2))
   # range_d1 = c(0, log(2))
 
-  group_col <- u$data[[u$grouping]]
+  group_col <- r$data[[r$grouping]]
   members <- unique(group_col)
 
   check_groups <- sapply(c(base_group, minority_groups),
@@ -65,7 +64,7 @@ optimsens <-
     stop(sprintf("%s - not members of %s",
                  paste0(c(base_group, minority_groups)[!check_groups],
                         collapse = ","),
-                 u$grouping))
+                 r$grouping))
   }
 
   # Optimization hyper parameters
@@ -107,145 +106,64 @@ optimsens <-
   }
 
   # Generate initial values
+  # TODO(jongbin): Allow the user to specify initial values?
   params_init <- foreach(minor = minority_groups,
                          .combine = dplyr::bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
-      tag_ <- paste(minor, sgn, sep = "_")
+    foreach(sgn = c(-1, 1), .combine = dplyr::bind_rows) %dopar% {
+      tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
 
-      if (!is.null(optim_params)) {
-        init_ <- optim_params %>%
-          dplyr::filter(tag == tag_) %>%
-          dplyr::mutate(pars = map(optim, "par")) %>%
-          dplyr::pull("pars") %>%
-          `[[`(1)
-      } else {
-        init_ <- runif(length(params_lower),
-                       min = params_lower,
-                       max = params_upper)
-      }
+      init_ <- stats::runif(length(params_lower),
+                            min = params_lower,
+                            max = params_upper)
 
       dplyr::tibble(tag = tag_,  params = list(init_))
-    }
+  }
 
-
+  # Optimize for min/max over each minority group
   optim_res <- foreach(minor = minority_groups,
                        .combine = dplyr::bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
-      tag_ <- paste(minor, sgn, sep = "_")
+    foreach(sgn = c(-1, 1), .combine = dplyr::bind_rows) %dopar% {
+      tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
       pars <- params_init %>%
         dplyr::filter(tag == tag_) %>%
         dplyr::pull("params") %>%
         `[[`(1)
-      tibble(minor = minor,
-             tag = tag_,
-             optim = list(optim(pars,
-                                .get_optim_fn(u, sgn = sgn, compare = c(base_group, minor), tag = tag_),
-                                lower = params_lower, upper = params_upper)))
+
+      dplyr::tibble(minor = minor,
+                    tag = tag_,
+                    optim = list(
+                      stats::optim(
+                        pars,
+                        .get_optim_fn(
+                          r,
+                          sgn = sgn,
+                          compare = c(base_group, minor),
+                          tag = tag_
+                        ),
+                        lower = params_lower,
+                        upper = params_upper
+                      )
+                    ))
     }
 
-  check_path(OPTIM_RDS)
-  write_rds(optim_res, OPTIM_RDS)
-  wfit2 <- function(f, d, ...) u$fit2(f, d, w = weights)
+  # Extract final results from
+  coefs <-
+    foreach(ip = 1:nrow(optim_res), .combine = dplyr::bind_rows) %dopar% {
+    minor <- optim_res[ip, ][["minor"]]
+    tag_ <- optim_res[ip, ][["tag"]]
+    params <- optim_res[ip, ] %>%
+      dplyr::mutate(pars = purrr::map(optim, "par")) %>%
+      dplyr::pull("pars") %>%
+      `[[`(1)
 
-  d <- u$data
-
-  # Filter and refactor data by grouping variable, as necessary
-  if (!is.null(compare)) {
-    # Check that compare is well defined
-    check_levels <- sapply(compare, function(x) x %in% levels(d[[u$grouping]]))
-    if (!all(check_levels)) {
-      stop("Groups specified in compare do not exist:\n\t",
-           compare[!check_levels],
-           "\nAvailable groups are:\n\t",
-           paste0(levels(d[[u$grouping]]), collapse = ", "))
+    fn <- .get_optim_fn(r, sgn = sgn, compare = c(base_group, minor),
+                        return_scalar = FALSE)
+    ret <- fn(params)
+    ret$tag <- tag_
+    ret
     }
 
-    target_group_ind <- d[[u$grouping]] %in% compare
-
-    d <- d[target_group_ind, ]
-    d[[u$grouping]] <- forcats::fct_drop(d[[u$grouping]])
-    d[[u$grouping]] <- forcats::fct_relevel(d[[u$grouping]], compare)
-  }
-
-  if (is.factor(d[[u$grouping]])) {
-    message(sprintf("Comparing %s=%s against %s={%s}",
-                    u$grouping,
-                    levels(d[[u$grouping]])[1],
-                    u$grouping,
-                    paste0(levels(d[[u$grouping]])[-1], collapse = ", ")))
-  }
-
-  # Initialize columns required for sensitize()
-  d$treat <- d[[u$treatment]]
-
-  if (is.null(ptreat)) {
-    d$p_trt <- d$ptrt__
-  } else if (length(ptreat) == nrow(d) | length(ptreat) == 1) {
-    d$p_trt <- ptreat
-  } else {
-    stop("Bad specification of argument: ptreat")
-  }
-
-  if (is.null(resp_ctl)) {
-    d$resp_ctl <- d$resp_ctl__
-  } else if (length(resp_ctl) == nrow(d) | length(resp_ctl) == 1) {
-    d$resp_ctl <- resp_ctl
-  } else {
-    stop("Bad specification of argument: resp_ctl")
-  }
-
-  if (is.null(resp_trt)) {
-    d$resp_trt <- d$resp_trt__
-  } else if (length(resp_trt) == nrow(d) | length(resp_trt) == 1) {
-    d$resp_trt <- resp_trt
-  } else {
-    stop("Bad specification of argument: resp_trt")
-  }
-
-  # Appropriately expand parameters
-  qs <- .expand_params(d[[u$grouping]], q)
-  dps <- .expand_params(d[[u$grouping]], dp)
-  d0s <- .expand_params(d[[u$grouping]], d0)
-  d1s <- .expand_params(d[[u$grouping]], d1)
-
-  sens_df <- rnr::sensitize(d, q = qs, dp = dps, d0 = d0s, d1 = d1s,
-                            debug = TRUE)
-
-  df_ <- dplyr::bind_rows(sens_df %>% dplyr::mutate(u = 0),
-                          sens_df %>% dplyr::mutate(u = 1))
-
-  df_[[u$treatment]] <- ifelse(df_$u == 0, df_$ptrt_u0__, df_$ptrt_u1__)
-
-  if (u$risk_col == "resp_ctl") {
-    beta__ <- df_$beta_ctl__
-    delta__ <- df_$d0
-  } else if (u$risk_col == "resp_trt") {
-    beta__ <- df_$beta_trt__
-    delta__ <- df_$d1
-  } else {
-    stop("Misspecified risk_col in undi object.\n\t",
-         "Expected either resp_ctl or resp_trt\n\t",
-         "Got: ", u$risk_col)
-  }
-  df_$risk__ <- beta__ + df_$u * delta__
-
-  weights <- ifelse(df_$u == 0, 1 - df_$q, df_$q)
-
-  df_$weights <- weights
-
-  coefs <- .pull_coefs(df_,
-                       u$treatment,
-                       u$grouping,
-                       c("risk__", u$controls),
-                       fun = wfit2)
-
-  ret <- coefs[grepl(u$grouping, coefs$term), ]
-
-  if (debug) {
-    ret <- list(df_, ret)
-  }
-
-  ret
+  list(restuls = coefs, optim = optim_res)
 }
 
 
@@ -259,10 +177,13 @@ optimsens <-
 #' @param verbose whether or not to print debug messages
 #'       (0 = none, 1 = results only, 2 = everything)
 #' @param tag string to tag output with (usefull for parallel output)
+#' @param return_scalar logical, whether to return a single scalar
+#'       values (TRUE) or to return the full result from \code{undisens}
 #'
 #' @return
 #'   Function that will return coefficient on minority group
-.get_optim_fn <- function (u, sgn, compare, verbose = TRUE, tag = "fit") {
+.get_optim_fn <- function (u, sgn, compare, verbose = TRUE, tag = "fit",
+                           return_scalar = TRUE) {
   function(params) {
     # Validate input
     if (length(compare) != 2) {
@@ -291,13 +212,17 @@ optimsens <-
                     q = c(qb, qm),
                     dp = c(ab, am),
                     d0 = c(d0b, d0m),
-                    d1 = c(d1b, d1m))
-    ret <- ret[["estimate"]]
+                    d1 = c(d1b, d1m),
+                    verbose = FALSE)
 
-    ret <- ret * sgn
+    if (return_scalar) {
+      ret <- ret[["estimate"]]
 
-    if (verbose) {
-      cat(sprintf("  %s coef: %.4f\n", tag, ret))
+      if (verbose) {
+        cat(sprintf("  %s coef: %.4f\n", tag, ret))
+      }
+
+      ret <- ret * sgn
     }
 
     ret

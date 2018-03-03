@@ -10,3 +10,7 @@
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach
 NULL
+
+if(getRversion() >= "2.15.1")
+  utils::globalVariables(c("sgn", "tag", "ip", "optim")
+  )

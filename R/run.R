@@ -225,10 +225,10 @@ undi <-
 #' @param r object of class rad ("undi")
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
-#' @param (Optional) base_group single group that acts as the pivot/base; by
+#' @param base_group (Optional) single group that acts as the pivot/base; by
 #'   default, if the grouping variable is a factor, set to the first level,
 #'   otherwise set to the first of sorted unique values
-#' @param (Optional) minority_groups groups to compare to the base group; by
+#' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
 #'
 #' @return tidy data frame of rad coefficients
