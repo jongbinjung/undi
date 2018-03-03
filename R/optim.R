@@ -1,9 +1,9 @@
-#' Find parameter values that min/maximize undi results
+#' Find parameter values that min/maximize sensitivity results
 #'
 #' Within specified range of sensitivity parameters, find the ones that achieve
-#' minimum/maximum undi results
+#' minimum/maximum sensitivity results
 #'
-#' @param r object of class \code{undi}
+#' @param pol object of class \code{policy}
 #' @param range_q 2D vector specifying min/max value of p(u = 1 | x)
 #' @param range_dp 2D vector specifying min/max value of change in log-odds of
 #'   treat = 1 if u = 1
@@ -24,7 +24,7 @@
 #'   \describe{ \item{if \code{length(arg) = 1}}{single value applied to all
 #'   observations (rows)} \item{if \code{length(arg) = }number of levels in
 #'   grouping variable}{each parameter setting applied to corresponding level in
-#'   group} \item{if \code{length(arg) = nrow(u$data)}}{each parameter applied
+#'   group} \item{if \code{length(arg) = nrow(pol$data)}}{each parameter applied
 #'   to corresponding rows}} Note that if \code{compare} is specified, the
 #'   number of grouping levels is effectively the length of \code{compare}
 #'
@@ -33,7 +33,7 @@
 #'
 #' @export
 optimsens <-
-  function(r,
+  function(pol,
            range_q = c(0, 1),
            range_dp = c(0, log(2)),
            range_d0 = c(0, log(2)),
@@ -42,8 +42,8 @@ optimsens <-
            minority_groups = NULL,
            debug = FALSE) {
   # Input validation
-  if (!("undi" %in% class(r))) {
-    stop("Expected object of class undi")
+  if (!("policy" %in% class(pol))) {
+    stop("Expected object of class policy")
   }
 
   if (length(base_group) > 1) {
@@ -55,7 +55,7 @@ optimsens <-
   # range_d0 = c(0, log(2))
   # range_d1 = c(0, log(2))
 
-  group_col <- r$data[[r$grouping]]
+  group_col <- pol$data[[pol$grouping]]
   members <- unique(group_col)
 
   check_groups <- sapply(c(base_group, minority_groups),
@@ -64,7 +64,7 @@ optimsens <-
     stop(sprintf("%s - not members of %s",
                  paste0(c(base_group, minority_groups)[!check_groups],
                         collapse = ","),
-                 r$grouping))
+                 pol$grouping))
   }
 
   # Optimization hyper parameters
@@ -135,7 +135,7 @@ optimsens <-
                       stats::optim(
                         pars,
                         .get_optim_fn(
-                          r,
+                          pol,
                           sgn = sgn,
                           compare = c(base_group, minor),
                           tag = tag_
@@ -156,7 +156,7 @@ optimsens <-
       dplyr::pull("pars") %>%
       `[[`(1)
 
-    fn <- .get_optim_fn(r, sgn = sgn, compare = c(base_group, minor),
+    fn <- .get_optim_fn(pol, sgn = sgn, compare = c(base_group, minor),
                         return_scalar = FALSE)
     ret <- fn(params)
     ret$tag <- tag_
@@ -170,7 +170,7 @@ optimsens <-
 #' Generate subroutine for computing sensitized race coefficients for single
 #' minority group v. whites
 #'
-#' @param u undi object
+#' @param pol policy object
 #' @param sgn sign integer to multiply on scalar return value; used for
 #'       controlling max/min optimization
 #' @param compare vector of length 2, specifying the two groups to compare
@@ -178,11 +178,11 @@ optimsens <-
 #'       (0 = none, 1 = results only, 2 = everything)
 #' @param tag string to tag output with (usefull for parallel output)
 #' @param return_scalar logical, whether to return a single scalar
-#'       values (TRUE) or to return the full result from \code{undisens}
+#'       values (TRUE) or to return the full result from \code{sensitivity}
 #'
 #' @return
 #'   Function that will return coefficient on minority group
-.get_optim_fn <- function (u, sgn, compare, verbose = TRUE, tag = "fit",
+.get_optim_fn <- function (pol, sgn, compare, verbose = TRUE, tag = "fit",
                            return_scalar = TRUE) {
   function(params) {
     # Validate input
@@ -208,7 +208,7 @@ optimsens <-
                   exp(d1b), exp(d1m)))
     }
 
-    ret <- undisens(u, compare = compare,
+    ret <- sensitivity(pol, compare = compare,
                     q = c(qb, qm),
                     dp = c(ab, am),
                     d0 = c(d0b, d0m),

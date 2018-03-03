@@ -2,14 +2,14 @@
 % Please edit documentation in R/optim.R
 \name{optimsens}
 \alias{optimsens}
-\title{Find parameter values that min/maximize undi results}
+\title{Find parameter values that min/maximize sensitivity results}
 \usage{
-optimsens(r, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
+optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
   minority_groups = NULL, debug = FALSE)
 }
 \arguments{
-\item{r}{object of class \code{undi}}
+\item{pol}{object of class \code{policy}}
 
 \item{range_q}{2D vector specifying min/max value of p(u = 1 | x)}
 
@@ -38,7 +38,7 @@ expanded data frame used to fit model}
 }
 \description{
 Within specified range of sensitivity parameters, find the ones that achieve
-minimum/maximum undi results
+minimum/maximum sensitivity results
 }
 \details{
 All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
@@ -46,7 +46,7 @@ All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
   \describe{ \item{if \code{length(arg) = 1}}{single value applied to all
   observations (rows)} \item{if \code{length(arg) = }number of levels in
   grouping variable}{each parameter setting applied to corresponding level in
-  group} \item{if \code{length(arg) = nrow(u$data)}}{each parameter applied
+  group} \item{if \code{length(arg) = nrow(pol$data)}}{each parameter applied
   to corresponding rows}} Note that if \code{compare} is specified, the
   number of grouping levels is effectively the length of \code{compare}
 }

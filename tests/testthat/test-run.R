@@ -18,16 +18,21 @@ data <- data.frame(id = rep(1:N)) %>%
   )
 
 # Test basic constructor functionality ------------------------------------
-test_that("undi can generate a trivial object with custom values", {
-  undi_obj <- undi(a ~ x + z + c, data, outcome = "y",
-                   ptreat = .5,
-                   # Dummy function to skip model fitting
-                   fit2 = function(f, d) lm(1 ~ 1, d),
-                   resp_ctl = 0,
-                   resp_trt = 1)
+test_that("policy can generate a trivial object with custom values", {
+  policy_obj <- policy(
+    a ~ x + z + c,
+    data,
+    outcome = "y",
+    ptreat = .5,
+    # Dummy function to skip model fitting
+    fit2 = function(f, d)
+      lm(1 ~ 1, d),
+    resp_ctl = 0,
+    resp_trt = 1
+  )
 
-  expect_is(undi_obj, "undi")
-  expect_equal(undi_obj$data$ptrt__, rep(.5, nrow(data)))
-  expect_equal(undi_obj$data$resp_ctl__, rep(0, nrow(data)))
-  expect_equal(undi_obj$data$resp_trt__, rep(1, nrow(data)))
+  expect_is(policy_obj, "policy")
+  expect_equal(policy_obj$data$ptrt__, rep(.5, nrow(data)))
+  expect_equal(policy_obj$data$resp_ctl__, rep(0, nrow(data)))
+  expect_equal(policy_obj$data$resp_trt__, rep(1, nrow(data)))
 })

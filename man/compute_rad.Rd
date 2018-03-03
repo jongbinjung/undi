@@ -4,10 +4,11 @@
 \alias{compute_rad}
 \title{Run test for unjustified disparate impact}
 \usage{
-compute_rad(r, controls = NULL, base_group = NULL, minority_groups = NULL)
+compute_rad(pol, controls = NULL, base_group = NULL,
+  minority_groups = NULL)
 }
 \arguments{
-\item{r}{object of class rad ("undi")}
+\item{pol}{object of class policy}
 
 \item{controls}{character vector of additional controls to consider in the
 second-stage model}

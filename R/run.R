@@ -1,4 +1,4 @@
-#' Create rad object
+#' Create policy object
 #'
 #' @param formula a formula in the form of \code{treatment ~ grouping_variable +
 #'   other predictors} where the LHS is the treatment column, first element on
@@ -43,7 +43,7 @@
 #' @param ... additional arguments passed to first-stage model fitting function,
 #'   \code{fit1} and \code{fit_ptreat}
 #'
-#' @return undi object \item{data}{original data frame, augmented with columns
+#' @return policy object \item{data}{original data frame, augmented with columns
 #'   \code{fold__}, \code{ptrt__}, \code{resp_ctl__}, \code{resp_trt__}, and
 #'   \code{risk__}, which contain train/test fold indicators for the first
 #'   stage, treatment propesinty, first stage model probability predictions
@@ -59,11 +59,10 @@
 #'   used to generate predictions from first stage model} \item{fit2}{function
 #'   used to fit second stage model} \item{fit_ptreat}{function used to fit
 #'   model for treatment propensity} \item{pred_ptreat}{function used to
-#'   generate predictions for treatment propensity} \item{coefs}{second stage
-#'   model coefficients}
+#'   generate predictions for treatment propensity}
 #'
 #' @export
-undi <-
+policy <-
   function(formula,
            data,
            outcome,
@@ -142,6 +141,7 @@ undi <-
                               replace = TRUE,
                               prob = c(train, 1 - train))
       } else if (is.character(train)) {
+        # TODO(jongbin): Check that specified column is "proper"
         data$fold__ <- data[[train]]
       } else {
         stop("train should either be between 0 and 1, or column name")
@@ -149,7 +149,7 @@ undi <-
     } else if (length(train) == nrow(data)) {
       data$fold__ <- ifelse(train, "train", "test")
     } else {
-      stop("Wrong specification of argument train; see ?undi")
+      stop("Wrong specification of argument train; see ?policy")
     }
 
     train_df <- data[data$fold__ == "train", ]
@@ -191,14 +191,6 @@ undi <-
 
     data$risk__ <- logit(data[[paste0(risk, "__")]])
 
-    test_df <- data[data$fold__ == "test", ]
-
-    coefs <- .pull_coefs(test_df, treatment, grouping,
-                c("risk__", controls),
-                fun = fit2)
-
-    coefs <- coefs[grepl(grouping, coefs$term), ]
-
     ret <- list(data = data,
                 m1_ctl = m1_ctl,
                 m1_trt = m1_trt,
@@ -212,17 +204,16 @@ undi <-
                 pred1 = pred1,
                 fit_ptreat = fit_ptreat,
                 pred_ptreat = pred_ptreat,
-                fit2 = fit2,
-                coefs = coefs)
+                fit2 = fit2)
 
-    class(ret) <- c("undi", class(ret))
+    class(ret) <- c("policy", class(ret))
 
     return(ret)
   }
 
 #' Run test for unjustified disparate impact
 #'
-#' @param r object of class rad ("undi")
+#' @param pol object of class policy
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
 #' @param base_group (Optional) single group that acts as the pivot/base; by
@@ -235,21 +226,21 @@ undi <-
 #'
 #' @export
 compute_rad <-
-  function(r,
+  function(pol,
            controls = NULL,
            base_group = NULL,
            minority_groups = NULL) {
     # Input validation
-    if (!("undi" %in% class(r))) {
-      stop("Expected object of class undi")
+    if (!("policy" %in% class(pol))) {
+      stop("Expected object of class policy")
     }
 
     if (length(base_group) > 1) {
       stop("Specify a single base group.\n\tGot: ", base_group)
     }
 
-    d <- r$data
-    group_col <- d[[r$grouping]]
+    d <- pol$data
+    group_col <- d[[pol$grouping]]
     members <- unique(group_col)
 
     check_groups <- sapply(c(base_group, minority_groups),
@@ -258,7 +249,7 @@ compute_rad <-
       stop(sprintf("%s - not members of %s",
                    paste0(c(base_group, minority_groups)[!check_groups],
                           collapse = ","),
-                   r$grouping))
+                   pol$grouping))
     }
 
     if (is.null(base_group)) {
@@ -277,22 +268,22 @@ compute_rad <-
       }
     }
 
-    formula2 <- .make_formula(r$treatment, c("risk__", r$grouping, controls))
+    formula2 <- .make_formula(pol$treatment, c("risk__", pol$grouping, controls))
     test_df <- d[d$fold__ == "test", ]
 
     ret <- purrr::map_dfr(minority_groups, function(comp) {
-      target_group_ind <- test_df[[r$grouping]] %in% c(base_group, comp)
+      target_group_ind <- test_df[[pol$grouping]] %in% c(base_group, comp)
 
       tmp_df <- test_df[target_group_ind, ]
-      tmp_df[[r$grouping]] <- forcats::fct_drop(tmp_df[[r$grouping]])
-      tmp_df[[r$grouping]] <- forcats::fct_relevel(tmp_df[[r$grouping]],
+      tmp_df[[pol$grouping]] <- forcats::fct_drop(tmp_df[[pol$grouping]])
+      tmp_df[[pol$grouping]] <- forcats::fct_relevel(tmp_df[[pol$grouping]],
                                                    base_group)
 
-      coefs <- .pull_coefs(tmp_df, r$treatment, r$grouping,
+      coefs <- .pull_coefs(tmp_df, pol$treatment, pol$grouping,
                            c("risk__", controls),
-                           fun = r$fit2)
+                           fun = pol$fit2)
 
-      coefs[grepl(r$grouping, coefs$term), ]
+      coefs[grepl(pol$grouping, coefs$term), ]
     })
 
     return(ret)
