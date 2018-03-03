@@ -38,38 +38,37 @@ data <- tibble(id = rep(1:N)) %>%
   a = inv_logit(risk + e2) > .5,
   y = inv_logit(risk) > .5
   )
+```
 
-example_undi <-
-  undi(
-  a ~ x + z + c,
-  data,
-  outcome = "y",
-  cv.folds = 2,
-  distribution = "bernoulli"
-  )
-#> Using cv method...
-#> Using cv method...
-#> Using cv method...
+``` r
+example_policy <-
+  policy(a ~ x + z + c, 
+         data, 
+         outcome = "y", 
+         cv.folds = 2, 
+         distribution = "bernoulli")
+
+# Initial RAD computation
+compute_rad(example_policy)
+#>    term estimate std.error statistic p.value controls
+#> 1 xblue   0.3236    0.2392     1.353  0.1763   risk__
 
 # Sensitivity with uniform parameters
-undisens(
-  example_undi,
-  q = .45,
-  dp = log(1.8),
-  d0 = log(2),
-  d1 = log(1.5)
-  )
-#>    term estimate std.error statistic   p.value controls
-#> 3 xblue  0.02324  0.005581     4.164 3.196e-05   risk__
+sensitivity(example_policy, 
+            q = .45, 
+            dp = log(1.8), 
+            d0 = log(2), 
+            d1 = log(1.5))
+#>    term estimate std.error statistic p.value controls
+#> 3 xblue  0.02014  0.004904     4.106 4.1e-05   risk__
 
 # Sensitivity with parameters assigned to levels of the grouping variable
-undisens(
-  example_undi,
-  q = c(.45, .55),
-  dp = c(-log(1.2), log(1.5)),
-  d0 = c(-log(3), log(3)),
-  d1 = c(0, log(1.8))
+sensitivity(example_policy, 
+            q = c(.45, .55), 
+            dp = c(-log(1.2), log(1.5)), 
+            d0 = c(-log(3), log(3)), 
+            d1 = c(0, log(1.8))
   )
-#>    term estimate std.error statistic  p.value controls
-#> 2 xblue  0.02282  0.007369     3.097 0.001969   risk__
+#>    term estimate std.error statistic p.value controls
+#> 3 xblue  0.01237  0.005585     2.215 0.02681   risk__
 ```

@@ -28,7 +28,7 @@ devtools::install_github("jongbinjung/undi")
 
 ## Example
 
-```{r examples, cache=TRUE, warning=FALSE, message=FALSE}
+```{r fit, cache=TRUE, warning=FALSE, message=FALSE}
 library(undi)
 library(tidyverse)
 inv_logit <- stats::binomial()$linkinv
@@ -48,32 +48,32 @@ data <- tibble(id = rep(1:N)) %>%
   a = inv_logit(risk + e2) > .5,
   y = inv_logit(risk) > .5
   )
+```
 
-example_undi <-
-  undi(
-  a ~ x + z + c,
-  data,
-  outcome = "y",
-  cv.folds = 2,
-  distribution = "bernoulli"
-  )
+```{r examples, cache=TRUE, warning=FALSE, message=FALSE}
+example_policy <-
+  policy(a ~ x + z + c, 
+         data, 
+         outcome = "y", 
+         cv.folds = 2, 
+         distribution = "bernoulli")
+
+# Initial RAD computation
+compute_rad(example_policy)
 
 # Sensitivity with uniform parameters
-undisens(
-  example_undi,
-  q = .45,
-  dp = log(1.8),
-  d0 = log(2),
-  d1 = log(1.5)
-  )
+sensitivity(example_policy, 
+            q = .45, 
+            dp = log(1.8), 
+            d0 = log(2), 
+            d1 = log(1.5))
 
 # Sensitivity with parameters assigned to levels of the grouping variable
-undisens(
-  example_undi,
-  q = c(.45, .55),
-  dp = c(-log(1.2), log(1.5)),
-  d0 = c(-log(3), log(3)),
-  d1 = c(0, log(1.8))
+sensitivity(example_policy, 
+            q = c(.45, .55), 
+            dp = c(-log(1.2), log(1.5)), 
+            d0 = c(-log(3), log(3)), 
+            d1 = c(0, log(1.8))
   )
 ```
 
