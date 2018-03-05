@@ -57,6 +57,7 @@ sensitivity <-
   wfit2 <- function(f, d, ...) pol$fit2(f, d, w = weights)
 
   d <- pol$data
+  d <- d[d$fold__ == "test", ]
 
   # Filter and refactor data by grouping variable, as necessary
   if (!is.null(compare)) {
