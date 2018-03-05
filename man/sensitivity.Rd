@@ -5,7 +5,11 @@
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
+<<<<<<< HEAD
   resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
+=======
+  resp_ctl = NULL, resp_trt = NULL, controls = NULL,
+>>>>>>> 313a3e1f4f66e9850c5aba4fcf084a0c6379156d
   verbose = interactive(), debug = FALSE)
 }
 \arguments{
