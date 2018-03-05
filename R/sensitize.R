@@ -22,6 +22,9 @@
 #'   will override fitted values in \code{pol$data}
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
+#' @param naive_se logical flag, if TRUE, return std.error from naive
+#'   (non-sensitivity) test, as well as std.errors from final weighted
+#'   regression
 #' @param verbose logical flag, if TRUE, print relevant messages for user
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
@@ -49,7 +52,8 @@ sensitivity <-
            ptreat = NULL,
            resp_ctl = NULL,
            resp_trt = NULL,
-           controls,
+           controls = NULL,
+           naive_se = TRUE,
            verbose = interactive(),
            debug = FALSE) {
 
@@ -121,6 +125,16 @@ sensitivity <-
     stop("Bad specification of argument: resp_trt")
   }
 
+  if (naive_se) {
+    # Get standard errors from non-sensitivity adjusted regression
+    naive_coefs <- .pull_coefs(d,
+                               pol$treatment,
+                               pol$grouping,
+                               c("risk__", controls),
+                               fun = pol$fit2)
+    naive_coefs <- naive_coefs[, c("term", "std.error", "controls")]
+  }
+
   # Appropriately expand parameters
   qs <- .expand_params(d[[pol$grouping]], q)
   dps <- .expand_params(d[[pol$grouping]], dp)
@@ -157,6 +171,16 @@ sensitivity <-
                        pol$grouping,
                        c("risk__", controls),
                        fun = wfit2)
+
+  # Replace std.error with naive estimates
+  coefs <- coefs[, c("term", "estimate", "std.error", "controls")]
+
+  if (naive_se) {
+    coefs <- merge(coefs,
+                   naive_coefs,
+                   by = c("term", "controls"),
+                   suffixes = c(".weighted", ".naive"))
+  }
 
   ret <- coefs[grepl(pol$grouping, coefs$term), ]
 

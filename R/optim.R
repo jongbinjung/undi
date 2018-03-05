@@ -42,7 +42,7 @@ optimsens <-
            range_d1 = c(0, log(2)),
            base_group = NULL,
            minority_groups = NULL,
-           controls,
+           controls = NULL,
            debug = FALSE) {
   # Input validation
   if (!("policy" %in% class(pol))) {
@@ -146,7 +146,8 @@ optimsens <-
                           sgn = sgn,
                           compare = c(base_group, minor),
                           tag = tag_,
-                          controls = controls
+                          controls = controls,
+                          naive_se = FALSE
                         ),
                         lower = params_lower,
                         upper = params_upper
@@ -165,7 +166,8 @@ optimsens <-
       `[[`(1)
 
     fn <- .get_optim_fn(pol, sgn = sgn, compare = c(base_group, minor),
-                        controls = controls, return_scalar = FALSE)
+                        controls = controls, naive_se = TRUE,
+                        return_scalar = FALSE)
     ret <- fn(params)
     ret$tag <- tag_
     ret
@@ -180,23 +182,26 @@ optimsens <-
 #'
 #' @param pol policy object
 #' @param sgn sign integer to multiply on scalar return value; used for
-#'       controlling max/min optimization
+#'   controlling max/min optimization
 #' @param compare vector of length 2, specifying the two groups to compare
 #' @param tag string to tag output with (usefull for parallel output)
 #' @param controls vector of controls
-#' @param verbose whether or not to print debug messages
-#'       (0 = none, 1 = results only, 2 = everything)
-#' @param return_scalar logical, whether to return a single scalar
-#'       values (TRUE) or to return the full result from \code{sensitivity}
+#' @param naive_se whether or not to compute "naive" std.errors in sensitivity;
+#'   FALSE by default, to avoid unnecessary computation, but should be computed
+#'   for final results once extreme values have been identified
+#' @param verbose whether or not to print debug messages (0 = none, 1 = results
+#'   only, 2 = everything)
+#' @param return_scalar logical, whether to return a single scalar values (TRUE)
+#'   or to return the full result from \code{sensitivity}
 #'
-#' @return
-#'   Function that will return coefficient on minority group
+#' @return Function that will return coefficient on minority group
 .get_optim_fn <-
   function (pol,
             sgn,
             compare,
             tag = "fit",
-            controls,
+            controls = NULL,
+            naive_se = FALSE,
             verbose = TRUE,
             return_scalar = TRUE) {
 
@@ -232,6 +237,7 @@ optimsens <-
       d0 = c(d0b, d0m),
       d1 = c(d1b, d1m),
       controls = controls,
+      naive_se = naive_se,
       verbose = FALSE
     )
 

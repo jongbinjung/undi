@@ -5,8 +5,8 @@
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
-  resp_ctl = NULL, resp_trt = NULL, controls, verbose = interactive(),
-  debug = FALSE)
+  resp_ctl = NULL, resp_trt = NULL, controls = NULL,
+  verbose = interactive(), debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}

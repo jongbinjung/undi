@@ -6,7 +6,7 @@
 \usage{
 optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
-  minority_groups = NULL, controls, debug = FALSE)
+  minority_groups = NULL, controls = NULL, debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
