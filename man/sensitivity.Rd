@@ -5,8 +5,8 @@
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
-  resp_ctl = NULL, resp_trt = NULL, controls, verbose = interactive(),
-  debug = FALSE)
+  resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
+  verbose = interactive(), debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -40,6 +40,10 @@ will override fitted values in \code{pol$data}}
 
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}
+
+\item{naive_se}{logical flag, if TRUE, return std.error from naive
+(non-sensitivity) test, as well as std.errors from final weighted
+regression}
 
 \item{verbose}{logical flag, if TRUE, print relevant messages for user}
 
