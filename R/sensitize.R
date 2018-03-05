@@ -20,6 +20,8 @@
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0); if provided, it
 #'   will override fitted values in \code{pol$data}
+#' @param controls vector of legitimate controls to use; the ones specified
+#'   within the policy object will be used if not specified
 #' @param verbose logical flag, if TRUE, print relevant messages for user
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
@@ -47,11 +49,16 @@ sensitivity <-
            ptreat = NULL,
            resp_ctl = NULL,
            resp_trt = NULL,
+           controls,
            verbose = interactive(),
            debug = FALSE) {
 
   if (!("policy" %in% class(pol))) {
     stop("Expected object of class policy")
+  }
+
+  if (is.null(controls)) {
+    controls <= pol$controls
   }
 
   wfit2 <- function(f, d, ...) pol$fit2(f, d, w = weights)
@@ -148,7 +155,7 @@ sensitivity <-
   coefs <- .pull_coefs(df_,
                        pol$treatment,
                        pol$grouping,
-                       c("risk__", pol$controls),
+                       c("risk__", controls),
                        fun = wfit2)
 
   ret <- coefs[grepl(pol$grouping, coefs$term), ]

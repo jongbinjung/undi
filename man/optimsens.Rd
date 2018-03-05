@@ -6,7 +6,7 @@
 \usage{
 optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
-  minority_groups = NULL, debug = FALSE)
+  minority_groups = NULL, controls, debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -28,6 +28,9 @@ otherwise set to the first of sorted unique values}
 
 \item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
+
+\item{controls}{vector of legitimate controls to use; the ones specified
+within the policy object will be used if not specified}
 
 \item{debug}{logical flag, if TRUE, returns a list of results and the
 expanded data frame used to fit model}

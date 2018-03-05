@@ -5,7 +5,7 @@
 \title{Sensitivity to unobserved confounders with specified parameters}
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
-  resp_ctl = NULL, resp_trt = NULL, verbose = interactive(),
+  resp_ctl = NULL, resp_trt = NULL, controls, verbose = interactive(),
   debug = FALSE)
 }
 \arguments{
@@ -37,6 +37,9 @@ given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 where outcome under certain treatment regimes is deterministic (e.g.,
 probability of finding illegal weapon if NOT frisked is 0); if provided, it
 will override fitted values in \code{pol$data}}
+
+\item{controls}{vector of legitimate controls to use; the ones specified
+within the policy object will be used if not specified}
 
 \item{verbose}{logical flag, if TRUE, print relevant messages for user}
 

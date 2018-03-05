@@ -16,6 +16,8 @@
 #'   otherwise set to the first of sorted unique values
 #' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
+#' @param controls vector of legitimate controls to use; the ones specified
+#'   within the policy object will be used if not specified
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
 #'
@@ -40,6 +42,7 @@ optimsens <-
            range_d1 = c(0, log(2)),
            base_group = NULL,
            minority_groups = NULL,
+           controls,
            debug = FALSE) {
   # Input validation
   if (!("policy" %in% class(pol))) {
@@ -48,6 +51,10 @@ optimsens <-
 
   if (length(base_group) > 1) {
     stop("Specify a single base group.\n\tGot: ", base_group)
+  }
+
+  if (is.null(controls)) {
+    controls <- pol$controls
   }
 
   # range_q = c(0, 1)
@@ -138,7 +145,8 @@ optimsens <-
                           pol,
                           sgn = sgn,
                           compare = c(base_group, minor),
-                          tag = tag_
+                          tag = tag_,
+                          controls = controls
                         ),
                         lower = params_lower,
                         upper = params_upper
@@ -157,7 +165,7 @@ optimsens <-
       `[[`(1)
 
     fn <- .get_optim_fn(pol, sgn = sgn, compare = c(base_group, minor),
-                        return_scalar = FALSE)
+                        controls = controls, return_scalar = FALSE)
     ret <- fn(params)
     ret$tag <- tag_
     ret
@@ -174,16 +182,24 @@ optimsens <-
 #' @param sgn sign integer to multiply on scalar return value; used for
 #'       controlling max/min optimization
 #' @param compare vector of length 2, specifying the two groups to compare
+#' @param tag string to tag output with (usefull for parallel output)
+#' @param controls vector of controls
 #' @param verbose whether or not to print debug messages
 #'       (0 = none, 1 = results only, 2 = everything)
-#' @param tag string to tag output with (usefull for parallel output)
 #' @param return_scalar logical, whether to return a single scalar
 #'       values (TRUE) or to return the full result from \code{sensitivity}
 #'
 #' @return
 #'   Function that will return coefficient on minority group
-.get_optim_fn <- function (pol, sgn, compare, verbose = TRUE, tag = "fit",
-                           return_scalar = TRUE) {
+.get_optim_fn <-
+  function (pol,
+            sgn,
+            compare,
+            tag = "fit",
+            controls,
+            verbose = TRUE,
+            return_scalar = TRUE) {
+
   function(params) {
     # Validate input
     if (length(compare) != 2) {
@@ -208,12 +224,16 @@ optimsens <-
                   exp(d1b), exp(d1m)))
     }
 
-    ret <- sensitivity(pol, compare = compare,
-                    q = c(qb, qm),
-                    dp = c(ab, am),
-                    d0 = c(d0b, d0m),
-                    d1 = c(d1b, d1m),
-                    verbose = FALSE)
+    ret <- sensitivity(
+      pol,
+      compare = compare,
+      q = c(qb, qm),
+      dp = c(ab, am),
+      d0 = c(d0b, d0m),
+      d1 = c(d1b, d1m),
+      controls = controls,
+      verbose = FALSE
+    )
 
     if (return_scalar) {
       ret <- ret[["estimate"]]
