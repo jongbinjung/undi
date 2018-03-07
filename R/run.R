@@ -16,9 +16,12 @@
 #'   data
 #' @param fit1 a function of the form f(formula, data, ...) used for fitting the
 #'   first-stage model; using \code{gbm} by default
-#' @param pred1 a function of the form f(model, data) used for generating
-#'   predictions from the first-stage model; predictions should be on
-#'   probability scale, while "risk" will always be on logit scale
+#' @param pred1 a function of the form f(model, data, formula) used for
+#'   generating predictions from the first-stage model; the formula argument can
+#'   be ignored within the function body, but the function should still accept
+#'   it; some prediction functions (e.g., glmnet) require the original formula;
+#'   predictions should be on probability scale, while "risk" will always be on
+#'   logit scale
 #' @param fit2 a function of the form f(formula, data, weights = NULL) used for
 #'   fitting the second-stage model; using \code{glm} with \code{family =
 #'   quasibinomial} by default; the \code{weights} argument is only used for
@@ -27,8 +30,9 @@
 #' @param fit_ptreat a function of the form f(formula, data, ...) used for
 #'   fitting propensity (probability of treatment) models. If not specified,
 #'   \code{fit1} is used by default, with the provided \code{formula} argument.
-#' @param pred_ptreat a function of the form f(model, data) used for generating
-#'   propensity predictions. If not specified, \code{pred1} is used by default.
+#' @param pred_ptreat a function of the form f(model, data, formula) used for
+#'   generating propensity predictions. If not specified, \code{pred1} is used
+#'   by default.
 #' @param risk One of \code{"resp_ctl"} or \code{"resp_trt"}, indicating which
 #'   treatment regime should be used as the risk score (default:
 #'   \code{resp_trt})
@@ -101,7 +105,7 @@ policy <-
     }
 
     if (is.null(pred1)) {
-      pred1 <- function(m, d)
+      pred1 <- function(m, d, f)
         gbm::predict.gbm(m, d,
                          gbm::gbm.perf(m, plot.it = FALSE, method = "cv"),
                          type = "response")
@@ -158,7 +162,7 @@ policy <-
     # Fit first-stage models
     if (is.null(resp_trt)) {
       m1_trt <- fit1(formula1, train_df[treated_train_ind, ], ...)
-      data$resp_trt__ <- pred1(m1_trt, data)
+      data$resp_trt__ <- pred1(m1_trt, data, formula1)
     } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
       m1_trt <- "Custom values of resp_trt provided"
       data$resp_trt__ <- resp_trt
@@ -168,7 +172,7 @@ policy <-
 
     if (is.null(resp_ctl)) {
       m1_ctl <- fit1(formula1, train_df[!treated_train_ind, ], ...)
-      data$resp_ctl__ <- pred1(m1_ctl, data)
+      data$resp_ctl__ <- pred1(m1_ctl, data, formula1)
     } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
       m1_ctl <- "Custom values of resp_ctl provided"
       data$resp_ctl__ <- resp_ctl
@@ -178,7 +182,7 @@ policy <-
 
     if (is.null(ptreat)) {
       m_ptrt <- fit_ptreat(formula, train_df, ...)
-      data$ptrt__ <- pred1(m_ptrt, data)
+      data$ptrt__ <- pred1(m_ptrt, data, formula)
     } else if (length(ptreat) == nrow(data) | length(ptreat) == 1) {
       # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
       # specified but ignored

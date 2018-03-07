@@ -32,9 +32,12 @@ data}
 \item{fit1}{a function of the form f(formula, data, ...) used for fitting the
 first-stage model; using \code{gbm} by default}
 
-\item{pred1}{a function of the form f(model, data) used for generating
-predictions from the first-stage model; predictions should be on
-probability scale, while "risk" will always be on logit scale}
+\item{pred1}{a function of the form f(model, data, formula) used for
+generating predictions from the first-stage model; the formula argument can
+be ignored within the function body, but the function should still accept
+it; some prediction functions (e.g., glmnet) require the original formula;
+predictions should be on probability scale, while "risk" will always be on
+logit scale}
 
 \item{fit2}{a function of the form f(formula, data, weights = NULL) used for
 fitting the second-stage model; using \code{glm} with \code{family =
@@ -46,8 +49,9 @@ non-weighted fitting)}
 fitting propensity (probability of treatment) models. If not specified,
 \code{fit1} is used by default, with the provided \code{formula} argument.}
 
-\item{pred_ptreat}{a function of the form f(model, data) used for generating
-propensity predictions. If not specified, \code{pred1} is used by default.}
+\item{pred_ptreat}{a function of the form f(model, data, formula) used for
+generating propensity predictions. If not specified, \code{pred1} is used
+by default.}
 
 \item{risk}{One of \code{"resp_ctl"} or \code{"resp_trt"}, indicating which
 treatment regime should be used as the risk score (default:
