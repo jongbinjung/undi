@@ -36,20 +36,13 @@ within the policy object will be used if not specified}
 expanded data frame used to fit model}
 }
 \value{
-\code{tidy} dataframe of second-stage model coefficients after
-  applying sensitivity parameters, with a nested column of sensitivity params
+a list with the following elements \item{results}{\code{tidy}
+  dataframe of second-stage model coefficients after searching for min/max
+  values across specified sensitivy parameter ranges, independently for each
+  minority group} \item{optim}{nested data frame where the \code{$optim}
+  column contains the optimization results}
 }
 \description{
 Within specified range of sensitivity parameters, find the ones that achieve
 minimum/maximum sensitivity results
-}
-\details{
-All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
-  one of three formats, determined by the \code{length} of each argument:
-  \describe{ \item{if \code{length(arg) = 1}}{single value applied to all
-  observations (rows)} \item{if \code{length(arg) = }number of levels in
-  grouping variable}{each parameter setting applied to corresponding level in
-  group} \item{if \code{length(arg) = nrow(pol$data)}}{each parameter applied
-  to corresponding rows}} Note that if \code{compare} is specified, the
-  number of grouping levels is effectively the length of \code{compare}
 }
