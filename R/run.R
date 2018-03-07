@@ -109,7 +109,7 @@ policy <-
     if (is.null(pred1)) {
       pred1 <- function(m, d, f)
         gbm::predict.gbm(m, d,
-                         gbm::gbm.perf(m, plot.it = FALSE, method = "cv"),
+                         gbm::gbm.perf(m, plot.it = FALSE),
                          type = "response")
     }
 
