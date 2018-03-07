@@ -43,6 +43,7 @@
 #'   given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0)
+#' @param calibrate whether or not to use platt scaling to calibrate predictions
 #' @param seed random seed to use
 #' @param ... additional arguments passed to first-stage model fitting function,
 #'   \code{fit1} and \code{fit_ptreat}
@@ -81,6 +82,7 @@ policy <-
            ptreat = NULL,
            resp_ctl = NULL,
            resp_trt = NULL,
+           calibrate = FALSE,
            seed = 1234,  # TODO: set seed randomly
            ...) {
     set.seed(seed)
@@ -135,6 +137,7 @@ policy <-
     formula1 <- .make_formula(outcome, c(grouping, basefeats))
     formula2 <- .make_formula(treatment, c("risk__", grouping, controls))
 
+
     # Split the data randomly, or by indexing vector, or use a predefined
     # column, based on the length of p_train
     if (length(train) == 1) {
@@ -156,13 +159,27 @@ policy <-
       stop("Wrong specification of argument train; see ?policy")
     }
 
-    train_df <- data[data$fold__ == "train", ]
-    treated_train_ind <- train_df[[treatment]] == 1
+    train_ind <- data$fold__ == "train"
+    ctl_train_ind <- train_ind & data[[treatment]] == 0
+    trt_train_ind <- train_ind & data[[treatment]] == 1
 
     # Fit first-stage models
     if (is.null(resp_trt)) {
-      m1_trt <- fit1(formula1, train_df[treated_train_ind, ], ...)
-      data$resp_trt__ <- pred1(m1_trt, data, formula1)
+      m1_trt <- fit1(formula1, data[trt_train_ind, ], ...)
+
+      if (calibrate) {
+        data$resp_trt_pre_calib__ <- pred1(m1_trt, data, formula1)
+        calib_formula <- .make_formula(outcome, "resp_trt_pre_calib__")
+
+        data$resp_trt__ <-
+          stats::predict.glm(stats::glm(calib_formula,
+                                        data = data[trt_train_ind,],
+                                        family = "binomial"),
+                             data,
+                             type = "response")
+      } else {
+        data$resp_trt__ <- pred1(m1_trt, data, formula1)
+      }
     } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
       m1_trt <- "Custom values of resp_trt provided"
       data$resp_trt__ <- resp_trt
@@ -171,8 +188,21 @@ policy <-
     }
 
     if (is.null(resp_ctl)) {
-      m1_ctl <- fit1(formula1, train_df[!treated_train_ind, ], ...)
-      data$resp_ctl__ <- pred1(m1_ctl, data, formula1)
+      m1_ctl <- fit1(formula1, data[ctl_train_ind, ], ...)
+
+      if (calibrate) {
+        data$resp_ctl_pre_calib__ <- pred1(m1_ctl, data, formula1)
+        calib_formula <- .make_formula(outcome, "resp_ctl_pre_calib__")
+
+        data$resp_ctl__ <-
+          stats::predict.glm(stats::glm(calib_formula,
+                                        data = data[ctl_train_ind,],
+                                        family = "binomial"),
+                             data,
+                             type = "response")
+      } else {
+        data$resp_ctl__ <- pred1(m1_ctl, data, formula1)
+      }
     } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
       m1_ctl <- "Custom values of resp_ctl provided"
       data$resp_ctl__ <- resp_ctl
@@ -181,7 +211,7 @@ policy <-
     }
 
     if (is.null(ptreat)) {
-      m_ptrt <- fit_ptreat(formula, train_df, ...)
+      m_ptrt <- fit_ptreat(formula, data[train_ind, ], ...)
       data$ptrt__ <- pred1(m_ptrt, data, formula)
     } else if (length(ptreat) == nrow(data) | length(ptreat) == 1) {
       # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is

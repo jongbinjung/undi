@@ -7,7 +7,7 @@
 policy(formula, data, outcome, controls = NULL, train = 0.5, fit1 = NULL,
   pred1 = NULL, fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL,
   risk = "resp_trt", ptreat = NULL, resp_ctl = NULL, resp_trt = NULL,
-  seed = 1234, ...)
+  calibrate = FALSE, seed = 1234, ...)
 }
 \arguments{
 \item{formula}{a formula in the form of \code{treatment ~ grouping_variable +
@@ -66,6 +66,8 @@ provided, it will override \code{fit_ptreat} and \code{pred_ptreat}}
 given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 where outcome under certain treatment regimes is deterministic (e.g.,
 probability of finding illegal weapon if NOT frisked is 0)}
+
+\item{calibrate}{whether or not to use platt scaling to calibrate predictions}
 
 \item{seed}{random seed to use}
 
