@@ -7,8 +7,6 @@
 #' @param data data frame to use; must include all the columns specified in
 #'   \code{formula} and given in the \code{outcome} parameter
 #' @param outcome name of outcome column in data
-#' @param controls character vector of additional controls to consider in the
-#'   second-stage model
 #' @param train either (1) a value between 0 and 1 representing the proportion
 #'   of data to use in training, (2) the name of a column of characters "train"
 #'   and "test" within \code{data} to use in splitting the data, or (3) a
@@ -44,6 +42,7 @@
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0)
 #' @param calibrate whether or not to use platt scaling to calibrate predictions
+#' @param save_models whether or not fitted models should be returned
 #' @param seed random seed to use
 #' @param ... additional arguments passed to first-stage model fitting function,
 #'   \code{fit1} and \code{fit_ptreat}
@@ -54,24 +53,23 @@
 #'   stage, treatment propesinty, first stage model probability predictions
 #'   under control and treatment, and appropriate risk measure on logit-scale,
 #'   respectively} \item{risk_col}{either "resp_ctl" or "resp_trt", indicating
-#'   which was used for "risk"}\item{m1_*}{fitted first stage model for response
-#'   give ctl/trt} \item{treatment}{name of column from \code{data} used as
-#'   treatment indicator} \item{outcome}{name of column from \code{data} used as
-#'   outcome indicator} \item{grouping}{name of column from \code{data} used as
-#'   grouping variable} \item{features}{additional features used in first stage
-#'   model} \item{controls}{legitimate controls used in second stage model}
-#'   \item{fit1}{function used to fit first stage model} \item{pred1}{function
-#'   used to generate predictions from first stage model} \item{fit2}{function
-#'   used to fit second stage model} \item{fit_ptreat}{function used to fit
-#'   model for treatment propensity} \item{pred_ptreat}{function used to
-#'   generate predictions for treatment propensity}
+#'   which was used for "risk"} \item{treatment}{name of column from \code{data}
+#'   used as treatment indicator} \item{outcome}{name of column from \code{data}
+#'   used as outcome indicator} \item{grouping}{name of column from \code{data}
+#'   used as grouping variable} \item{features}{additional features used in
+#'   first stage model} \item{fit1}{function used to fit first stage model}
+#'   \item{pred1}{function used to generate predictions from first stage model}
+#'   \item{fit2}{function used to fit second stage model}
+#'   \item{fit_ptreat}{function used to fit model for treatment propensity}
+#'   \item{pred_ptreat}{function used to generate predictions for treatment
+#'   propensity}\item{m_*}{if \code{save_models = TRUE}, each of the fitted
+#'   models; otherwise set to \code{NULL}}
 #'
 #' @export
 policy <-
   function(formula,
            data,
            outcome,
-           controls = NULL,
            train = 0.5,
            fit1 = NULL,
            pred1 = NULL,
@@ -83,6 +81,7 @@ policy <-
            resp_ctl = NULL,
            resp_trt = NULL,
            calibrate = FALSE,
+           save_models = FALSE,
            seed = 1234,  # TODO: set seed randomly
            ...) {
     set.seed(seed)
@@ -113,6 +112,14 @@ policy <-
                          type = "response")
     }
 
+    if (is.null(fit_ptreat)) {
+      fit_ptreat <- fit1
+    }
+
+    if (is.null(pred_ptreat)) {
+      pred_ptreat <- pred1
+    }
+
     if (is.null(fit2)) {
       fit2 <-
         function(f, d, w = NULL) {
@@ -124,19 +131,6 @@ policy <-
           }
         }
     }
-
-    if (is.null(fit_ptreat) & is.null(ptreat)) {
-      fit_ptreat <- fit1
-    }
-
-    if (is.null(pred_ptreat) & is.null(ptreat)) {
-      pred_ptreat <- pred1
-    }
-
-    # Generate formulas for first and second stage models
-    formula1 <- .make_formula(outcome, c(grouping, basefeats))
-    formula2 <- .make_formula(treatment, c("risk__", grouping, controls))
-
 
     # Split the data randomly, or by indexing vector, or use a predefined
     # column, based on the length of p_train
@@ -159,92 +153,29 @@ policy <-
       stop("Wrong specification of argument train; see ?policy")
     }
 
-    train_ind <- data$fold__ == "train"
-    ctl_train_ind <- train_ind & data[[treatment]] == 0
-    trt_train_ind <- train_ind & data[[treatment]] == 1
-
-    # Fit first-stage models
-    if (is.null(resp_trt)) {
-      m1_trt <- fit1(formula1, data[trt_train_ind, ], ...)
-
-      data$resp_trt_pre_calib__ <- pred1(m1_trt, data, formula1)
-
-      if (calibrate) {
-        calib_formula <- .make_formula(outcome, "resp_trt_pre_calib__")
-
-        data$resp_trt__ <-
-          stats::predict.glm(stats::glm(calib_formula,
-                                        data = data[trt_train_ind,],
-                                        family = "binomial"),
-                             data,
-                             type = "response")
-      } else {
-        data$resp_trt__ <- data$resp_trt_pre_calib__
-      }
-    } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
-      m1_trt <- "Custom values of resp_trt provided"
-      data$resp_trt__ <- resp_trt
-    } else {
-      stop("Bad specification of argument: resp_trt")
-    }
-
-    if (is.null(resp_ctl)) {
-      m1_ctl <- fit1(formula1, data[ctl_train_ind, ], ...)
-
-      data$resp_ctl_pre_calib__ <- pred1(m1_ctl, data, formula1)
-
-      if (calibrate) {
-        calib_formula <- .make_formula(outcome, "resp_ctl_pre_calib__")
-
-        data$resp_ctl__ <-
-          stats::predict.glm(stats::glm(calib_formula,
-                                        data = data[ctl_train_ind,],
-                                        family = "binomial"),
-                             data,
-                             type = "response")
-      } else {
-        data$resp_ctl__ <- data$resp_ctl_pre_calib__
-      }
-    } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
-      m1_ctl <- "Custom values of resp_ctl provided"
-      data$resp_ctl__ <- resp_ctl
-    } else {
-      stop("Bad specification of argument: resp_ctl")
-    }
-
-    if (is.null(ptreat)) {
-      m_ptrt <- fit_ptreat(formula, data[train_ind, ], ...)
-      data$ptrt__ <- pred1(m_ptrt, data, formula)
-    } else if (length(ptreat) == nrow(data) | length(ptreat) == 1) {
-      # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
-      # specified but ignored
-      m_ptrt <- "Custom values of ptreat provided"
-      fit_ptreat <- "Overrided with custom values for ptreat"
-      pred_ptreat <- "Overrided with custom values for ptreat"
-      data$ptrt__ <- ptreat
-    } else {
-      stop("Bad specification of argument: ptreat")
-    }
-
-    data$risk__ <- logit(data[[paste0(risk, "__")]])
-
     ret <- list(data = data,
-                m_ptrt = m_ptrt,
-                m1_ctl = m1_ctl,
-                m1_trt = m1_trt,
                 risk_col = risk,
                 treatment = treatment,
                 outcome = outcome,
                 grouping = grouping,
                 features = basefeats,
-                controls = controls,
                 fit1 = fit1,
                 pred1 = pred1,
                 fit_ptreat = fit_ptreat,
                 pred_ptreat = pred_ptreat,
-                fit2 = fit2)
-
+                fit2 = fit2,
+                m_resp_ctl = NULL,
+                m_resp_trt = NULL,
+                m_ptrt = NULL)
     class(ret) <- c("policy", class(ret))
+
+    # Add policy estimates
+    ret <- estimate_policy(ret,
+                           ptreat = ptreat,
+                           resp_ctl = resp_ctl,
+                           resp_trt = resp_trt,
+                           calibrate = calibrate,
+                           save_models = save_models)
 
     return(ret)
   }
@@ -326,3 +257,135 @@ compute_rad <-
 
     return(ret)
   }
+
+
+#' (Re)Estimate treatment and response surface models for a policy
+#'
+#' @param pol a policy object
+#' @param ptreat (Optional) default value for probability of treatment; if
+#'   provided, it will override \code{fit_ptreat} and \code{pred_ptreat}
+#' @param resp_ctl (Optional)
+#' @param resp_trt (Optional) default value for probability of response = 1
+#'   given each treatment regime (\code{ctl}, \code{trt}); useful for cases
+#'   where outcome under certain treatment regimes is deterministic (e.g.,
+#'   probability of finding illegal weapon if NOT frisked is 0)
+#' @param calibrate whether or not to use platt scaling to calibrate predictions
+#' @param save_models whether or not fitted models should be returned
+#' @param ... additional arguments passed to model fitting functions \code{fit1}
+#'   and \code{fit_ptreat}
+#'
+#' @return object of class \code{policy} where the relative columns in
+#'   \code{$data} are updated with new predictions
+#'
+#' @export
+estimate_policy <- function(pol,
+                            ptreat = NULL,
+                            resp_ctl = NULL,
+                            resp_trt = NULL,
+                            calibrate = FALSE,
+                            save_models = FALSE,
+                            ...) {
+    # Input validation
+    if (!("policy" %in% class(pol))) {
+      stop("Expected object of class policy")
+    }
+
+    d <- pol$data
+
+    train_ind <- d$fold__ == "train"
+    ctl_train_ind <- train_ind & (d[[pol$treatment]] == 0)
+    trt_train_ind <- train_ind & (d[[pol$treatment]] == 1)
+
+    # Generate formulas for first and second stage models
+    out_formula <- .make_formula(pol$outcome, c(pol$grouping, pol$features))
+    trt_formula <- .make_formula(pol$treatment, c(pol$grouping, pol$features))
+
+    # Fit first-stage models
+    if (is.null(resp_trt)) {
+      m1_trt <- pol$fit1(out_formula, d[trt_train_ind, ], ...)
+
+      d$resp_trt_pre_calib__ <- pol$pred1(m1_trt, d, out_formula)
+
+      if (calibrate) {
+        calib_formula <- .make_formula(pol$outcome, "resp_trt_pre_calib__")
+
+        d$resp_trt__ <-
+          stats::predict.glm(stats::glm(calib_formula,
+                                        data = d[trt_train_ind,],
+                                        family = "binomial"),
+                             d,
+                             type = "response")
+      } else {
+        d$resp_trt__ <- d$resp_trt_pre_calib__
+      }
+    } else if (length(resp_trt) == nrow(d) | length(resp_trt) == 1) {
+      message("Using custom values provided for resp_trt")
+      m1_trt <- "Custom values of resp_trt provided"
+      d$resp_trt__ <- resp_trt
+    } else {
+      stop("Bad specification of argument: resp_trt")
+    }
+
+    if (is.null(resp_ctl)) {
+      m1_ctl <- pol$fit1(out_formula, d[ctl_train_ind, ], ...)
+
+      d$resp_ctl_pre_calib__ <- pol$pred1(m1_ctl, d, out_formula)
+
+      if (calibrate) {
+        calib_formula <- .make_formula(pol$outcome, "resp_ctl_pre_calib__")
+
+        d$resp_ctl__ <-
+          stats::predict.glm(stats::glm(calib_formula,
+                                        data = d[ctl_train_ind,],
+                                        family = "binomial"),
+                             d,
+                             type = "response")
+      } else {
+        d$resp_ctl__ <- d$resp_ctl_pre_calib__
+      }
+    } else if (length(resp_ctl) == nrow(d) | length(resp_ctl) == 1) {
+      message("Using custom values provided for resp_ctl")
+      m1_ctl <- "Custom values of resp_ctl provided"
+      d$resp_ctl__ <- resp_ctl
+    } else {
+      stop("Bad specification of argument: resp_ctl")
+    }
+
+    if (is.null(ptreat)) {
+      m_ptrt <- pol$fit_ptreat(trt_formula, d[train_ind, ], ...)
+
+      d$ptrt_pre_calib__ <- pol$pred_ptreat(m_ptrt, d, trt_formula)
+
+      if (calibrate) {
+        calib_formula <- .make_formula(pol$treatment, "ptrt_pre_calib__")
+
+        d$ptrt__ <-
+          stats::predict.glm(stats::glm(calib_formula,
+                                        data = d[train_ind, ],
+                                        family = "binomial"),
+                             d,
+                             type = "response")
+      } else {
+        d$ptrt__ <- d$ptrt_pre_calib__
+      }
+    } else if (length(ptreat) == nrow(d) | length(ptreat) == 1) {
+      # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
+      # specified but ignored
+      message("Using custom values provided for ptreat")
+      m_ptrt <- "Custom values of ptreat provided"
+      d$ptrt__ <- ptreat
+    } else {
+      stop("Bad specification of argument: ptreat")
+    }
+
+    d$risk__ <- logit(d[[paste0(pol$risk_col, "__")]])
+
+    pol$data <- d
+    if (save_models) {
+      pol$m_ptrt <- m_ptrt
+      pol$m_resp_ctl <- m1_ctl
+      pol$m_resp_trt <- m1_trt
+    }
+
+    return(pol)
+}

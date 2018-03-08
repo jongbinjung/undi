@@ -4,10 +4,10 @@
 \alias{policy}
 \title{Create policy object}
 \usage{
-policy(formula, data, outcome, controls = NULL, train = 0.5, fit1 = NULL,
-  pred1 = NULL, fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL,
-  risk = "resp_trt", ptreat = NULL, resp_ctl = NULL, resp_trt = NULL,
-  calibrate = FALSE, seed = 1234, ...)
+policy(formula, data, outcome, train = 0.5, fit1 = NULL, pred1 = NULL,
+  fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL, risk = "resp_trt",
+  ptreat = NULL, resp_ctl = NULL, resp_trt = NULL, calibrate = FALSE,
+  save_models = FALSE, seed = 1234, ...)
 }
 \arguments{
 \item{formula}{a formula in the form of \code{treatment ~ grouping_variable +
@@ -19,9 +19,6 @@ specifies the predictors for first-stage model}
 \code{formula} and given in the \code{outcome} parameter}
 
 \item{outcome}{name of outcome column in data}
-
-\item{controls}{character vector of additional controls to consider in the
-second-stage model}
 
 \item{train}{either (1) a value between 0 and 1 representing the proportion
 of data to use in training, (2) the name of a column of characters "train"
@@ -69,6 +66,8 @@ probability of finding illegal weapon if NOT frisked is 0)}
 
 \item{calibrate}{whether or not to use platt scaling to calibrate predictions}
 
+\item{save_models}{whether or not fitted models should be returned}
+
 \item{seed}{random seed to use}
 
 \item{...}{additional arguments passed to first-stage model fitting function,
@@ -81,17 +80,17 @@ policy object \item{data}{original data frame, augmented with columns
   stage, treatment propesinty, first stage model probability predictions
   under control and treatment, and appropriate risk measure on logit-scale,
   respectively} \item{risk_col}{either "resp_ctl" or "resp_trt", indicating
-  which was used for "risk"}\item{m1_*}{fitted first stage model for response
-  give ctl/trt} \item{treatment}{name of column from \code{data} used as
-  treatment indicator} \item{outcome}{name of column from \code{data} used as
-  outcome indicator} \item{grouping}{name of column from \code{data} used as
-  grouping variable} \item{features}{additional features used in first stage
-  model} \item{controls}{legitimate controls used in second stage model}
-  \item{fit1}{function used to fit first stage model} \item{pred1}{function
-  used to generate predictions from first stage model} \item{fit2}{function
-  used to fit second stage model} \item{fit_ptreat}{function used to fit
-  model for treatment propensity} \item{pred_ptreat}{function used to
-  generate predictions for treatment propensity}
+  which was used for "risk"} \item{treatment}{name of column from \code{data}
+  used as treatment indicator} \item{outcome}{name of column from \code{data}
+  used as outcome indicator} \item{grouping}{name of column from \code{data}
+  used as grouping variable} \item{features}{additional features used in
+  first stage model} \item{fit1}{function used to fit first stage model}
+  \item{pred1}{function used to generate predictions from first stage model}
+  \item{fit2}{function used to fit second stage model}
+  \item{fit_ptreat}{function used to fit model for treatment propensity}
+  \item{pred_ptreat}{function used to generate predictions for treatment
+  propensity}\item{m_*}{if \code{save_models = TRUE}, each of the fitted
+  models; otherwise set to \code{NULL}}
 }
 \description{
 Create policy object
