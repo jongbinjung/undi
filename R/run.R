@@ -167,8 +167,9 @@ policy <-
     if (is.null(resp_trt)) {
       m1_trt <- fit1(formula1, data[trt_train_ind, ], ...)
 
+      data$resp_trt_pre_calib__ <- pred1(m1_trt, data, formula1)
+
       if (calibrate) {
-        data$resp_trt_pre_calib__ <- pred1(m1_trt, data, formula1)
         calib_formula <- .make_formula(outcome, "resp_trt_pre_calib__")
 
         data$resp_trt__ <-
@@ -178,7 +179,7 @@ policy <-
                              data,
                              type = "response")
       } else {
-        data$resp_trt__ <- pred1(m1_trt, data, formula1)
+        data$resp_trt__ <- data$resp_trt_pre_calib__
       }
     } else if (length(resp_trt) == nrow(data) | length(resp_trt) == 1) {
       m1_trt <- "Custom values of resp_trt provided"
@@ -190,8 +191,9 @@ policy <-
     if (is.null(resp_ctl)) {
       m1_ctl <- fit1(formula1, data[ctl_train_ind, ], ...)
 
+      data$resp_ctl_pre_calib__ <- pred1(m1_ctl, data, formula1)
+
       if (calibrate) {
-        data$resp_ctl_pre_calib__ <- pred1(m1_ctl, data, formula1)
         calib_formula <- .make_formula(outcome, "resp_ctl_pre_calib__")
 
         data$resp_ctl__ <-
@@ -201,7 +203,7 @@ policy <-
                              data,
                              type = "response")
       } else {
-        data$resp_ctl__ <- pred1(m1_ctl, data, formula1)
+        data$resp_ctl__ <- data$resp_ctl_pre_calib__
       }
     } else if (length(resp_ctl) == nrow(data) | length(resp_ctl) == 1) {
       m1_ctl <- "Custom values of resp_ctl provided"
@@ -216,6 +218,7 @@ policy <-
     } else if (length(ptreat) == nrow(data) | length(ptreat) == 1) {
       # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
       # specified but ignored
+      m_ptrt <- "Custom values of ptreat provided"
       fit_ptreat <- "Overrided with custom values for ptreat"
       pred_ptreat <- "Overrided with custom values for ptreat"
       data$ptrt__ <- ptreat
@@ -226,6 +229,7 @@ policy <-
     data$risk__ <- logit(data[[paste0(risk, "__")]])
 
     ret <- list(data = data,
+                m_ptrt = m_ptrt,
                 m1_ctl = m1_ctl,
                 m1_trt = m1_trt,
                 risk_col = risk,
