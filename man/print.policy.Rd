@@ -7,7 +7,7 @@
 \method{print}{policy}(x, ...)
 }
 \arguments{
-\item{x}{an object class policy}
+\item{x}{an object of class policy}
 
 \item{...}{other stuff}
 }

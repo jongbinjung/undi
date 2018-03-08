@@ -97,3 +97,15 @@ inv_logit <- stats::binomial()$linkinv
        d1m = params[8])
 }
 
+#' Compute AUC given predictions and corresponding labels
+#'
+#' @param pred scalar predictions
+#' @param label binary labels
+#'
+#' @return scalar AUC
+.compute_auc <- function(pred, label) {
+  p <- ROCR::prediction(pred, label)
+  auc <- ROCR::performance(p, "auc")
+  unlist(auc@y.values)
+}
+
