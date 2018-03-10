@@ -84,17 +84,35 @@ inv_logit <- stats::binomial()$linkinv
 #' Extract sensitivity parameters from a list of parameters for optimization
 #'
 #' @param params vector of parameters
+#' @param free_params (Optional) logical vector of length 8 indicating which parameters
+#'   are specified in params. \code{length(params)} should equal \code{sum(free_params == T)}.
+#' @param fixed_param_values (Optional) vector specifing the values of the fixed parameters
+#'   (ie when \code{free_params == F})
+#' @param q_range if true, the second parameter defines the log odds ratio between
+#'   q for majority and minority
 #'
 #' @return named list of parameters
-.extract_params <- function(params) {
-  list(qb  = params[1],
-       qm  = params[2],
-       ab  = params[3],
-       am  = params[4],
-       d0b = params[5],
-       d0m = params[6],
-       d1b = params[7],
-       d1m = params[8])
+.extract_params <- function(params,
+                            free_params = rep(T, 8),
+                            fixed_param_values = NULL,
+                            q_range = FALSE) {
+  
+  all_params = numeric(8)
+  all_params[free_params] = params
+  all_params[!free_params] = fixed_param_values
+  
+  if (q_range) {
+    all_params[2] = inv_logit(logit(all_params[1]) + all_params[2])
+  }
+  
+  list(qb  = all_params[1],
+       qm  = all_params[2],
+       ab  = all_params[3],
+       am  = all_params[4],
+       d0b = all_params[5],
+       d0m = all_params[6],
+       d1b = all_params[7],
+       d1m = all_params[8])
 }
 
 #' Compute AUC given predictions and corresponding labels
