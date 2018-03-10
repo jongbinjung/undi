@@ -16,10 +16,10 @@
 #'   otherwise set to the first of sorted unique values
 #' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
-#' @param range_q_ratio (Optional) 2D vector. If set, the minority and majority values
-#'   of q will not be allowed to vary independently, but instead will be constrained
-#'   to vary by the given range of log odds. ie
-#'   q_minority = inv.logit(logit(q_majority) + u), where u is in range_q_ratio
+#' @param range_q_ratio (Optional) 2D vector. If set, the minority and majority
+#'   values of q will not be allowed to vary independently, but instead will be
+#'   constrained to vary by the given range of log odds. ie q_minority =
+#'   inv.logit(logit(q_majority) + u), where u is in range_q_ratio
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
 #' @param debug logical flag, if TRUE, returns a list of results and the
@@ -55,7 +55,7 @@ optimsens <-
   if (is.null(controls)) {
     controls <- pol$controls
   }
-    
+
   if (!is.null(range_q_ratio) && (length(range_q_ratio) != 2)) {
     stop("range_q_ratio should be NULL or a vector of length 2")
   }
@@ -80,7 +80,9 @@ optimsens <-
   # Optimization hyper parameters
   params_lower <- c(
     range_q[1],   # Min P(u = 1 | base )
-    range_q[1],   # Min P(u = 1 | minority ) OR Min log-odds(u = 1 | base) - log-odds(u = 1 | minority)
+    # Min P(u = 1 | minority ) or
+    # Min log-odds(u = 1 | base) - log-odds(u = 1 | minority)
+    range_q[1],
     range_dp[1],  # Min alpha_base
     range_dp[1],  # Min alpha_minority
     range_d0[1],  # Min delta0_base
@@ -88,14 +90,16 @@ optimsens <-
     range_d1[1],  # Min delta1_base
     range_d1[1]   # Min delta1_minority
   )
-  
+
   if (!is.null(range_q_ratio)) {
     params_lower[2] = range_q_ratio[1]
   }
-  
+
   params_upper <- c(
     range_q[2],   # Max P(u = 1 | base )
-    range_q[2],   # Max P(u = 1 | minority ) OR Max log-odds(u = 1 | base) - log-odds(u = 1 | minority)
+    # Max P(u = 1 | minority ) or
+    # Max log-odds(u = 1 | base) - log-odds(u = 1 | minority)
+    range_q[2],
     range_dp[2],  # Max alpha_base
     range_dp[2],  # Max alpha_minority
     range_d0[2],  # Max delta0_base
@@ -103,13 +107,13 @@ optimsens <-
     range_d1[2],  # Max delta1_base
     range_d1[2]   # Max delta1_minority
   )
-  
+
   if (!is.null(range_q_ratio)) {
     params_upper[2] = range_q_ratio[2]
   }
-  
+
   free_params = abs(params_upper - params_lower) > 2*.Machine$double.eps
-  
+
   if (any(params_upper[free_params] < params_lower[free_params])) {
     stop("Upper value in range must be equal to or larger than lower value")
   }
@@ -172,13 +176,13 @@ optimsens <-
         upper = params_upper[free_params],
         method = 'L-BFGS-B'
       )
-      
+
       # Convert parameters back to 8-D vector
       opt$par = unlist(.extract_params(
         opt$par, free_params,
         pars[!free_params],
         !is.null(range_q_ratio)))
-      
+
       dplyr::tibble(minor = minor,
                     tag = tag_,
                     optim = list(opt))
@@ -203,8 +207,8 @@ optimsens <-
     ret
     }
 
-  
-  
+
+
   list(results = coefs, optim = optim_res)
 }
 
@@ -216,14 +220,14 @@ optimsens <-
 #' @param sgn sign integer to multiply on scalar return value; used for
 #'   controlling max/min optimization
 #' @param compare vector of length 2, specifying the two groups to compare
-#' @param free_params a logical vector indicating which of the (8) input parameters
-#'  are free to vary. If NULL, all parameters are allowed to vary
+#' @param free_params a logical vector indicating which of the (8) input
+#'   parameters are free to vary. If NULL, all parameters are allowed to vary
 #' @param fixed_param_values A vector defining the values of the fixed params.
 #'   \code{length(fixed_param_values)} should equal \code{sum(free_params == F)}
 #' @param tag string to tag output with (usefull for parallel output)
 #' @param controls vector of controls
-#' @param q_range if true, the second parameter defines the log odds ratio between
-#'   q for majority and minority
+#' @param q_range if true, the second parameter defines the log odds ratio
+#'   between q for majority and minority
 #' @param naive_se whether or not to compute "naive" std.errors in sensitivity;
 #'   FALSE by default, to avoid unnecessary computation, but should be computed
 #'   for final results once extreme values have been identified
@@ -245,29 +249,30 @@ optimsens <-
             naive_se = FALSE,
             verbose = TRUE,
             return_scalar = TRUE) {
-    
+
   # Validate input
   if (length(compare) != 2) {
     stop("Can only get optim fn for comparison of two groups, got ",
          length(compare))
   }
-  
+
   if (is.null(free_params)) {
     free_params = rep(T, 8)
   }
-    
+
   if (length(free_params) != 8 || !is.logical(free_params)) {
     stop("free_params must be a logical vector of length 8")
   }
-  
+
   if (sum(!free_params) != length(fixed_param_values)) {
-    stop("The length of fixed_param_values does not equal the number of fixed parameters indicated by free_params")
+    stop(paste0("The length of fixed_param_values does not equal",
+                "the number of fixed parameters indicated by free_params"))
   }
 
   function(params) {
 
     # Unpack parameters
-    
+
     p <- .extract_params(params,
                          free_params = free_params,
                          fixed_param_values = fixed_param_values,
@@ -280,7 +285,7 @@ optimsens <-
     d0m <- p$d0m
     d1b <- p$d1b
     d1m <- p$d1m
-  
+
 
     if (verbose >= 2) {
       cat(sprintf(paste("%s: q=%.2f/%.2f, e(a)=%.2f/%.2f,",

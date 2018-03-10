@@ -30,10 +30,10 @@ otherwise set to the first of sorted unique values}
 \item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
 
-\item{range_q_ratio}{(Optional) 2D vector. If set, the minority and majority values
-of q will not be allowed to vary independently, but instead will be constrained
-to vary by the given range of log odds. ie
-q_minority = inv.logit(logit(q_majority) + u), where u is in range_q_ratio}
+\item{range_q_ratio}{(Optional) 2D vector. If set, the minority and majority
+values of q will not be allowed to vary independently, but instead will be
+constrained to vary by the given range of log odds. ie q_minority =
+inv.logit(logit(q_majority) + u), where u is in range_q_ratio}
 
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}
