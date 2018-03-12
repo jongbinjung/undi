@@ -5,6 +5,16 @@
 logit <- stats::binomial()$linkfun
 inv_logit <- stats::binomial()$linkinv
 
+#' Given a policy object, compute and return the appropriate risk column
+.get_risk_col <- function(pol) {
+  # Input validation
+  if (!("policy" %in% class(pol))) {
+    stop("Expected object of class policy")
+  }
+
+  logit(pol$data[[paste0(pol$risk_col, "__")]])
+}
+
 #' Fit second stage model and extract coefficients
 #'
 #' Get tidy coefficients for cn_lhs ~ cn_tgt + controls given a data frame and
@@ -96,15 +106,15 @@ inv_logit <- stats::binomial()$linkinv
                             free_params = rep(T, 8),
                             fixed_param_values = NULL,
                             q_range = FALSE) {
-  
+
   all_params = numeric(8)
   all_params[free_params] = params
   all_params[!free_params] = fixed_param_values
-  
+
   if (q_range) {
     all_params[2] = inv_logit(logit(all_params[1]) + all_params[2])
   }
-  
+
   list(qb  = all_params[1],
        qm  = all_params[2],
        ab  = all_params[3],

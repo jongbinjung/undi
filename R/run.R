@@ -378,9 +378,10 @@ estimate_policy <- function(pol,
       stop("Bad specification of argument: ptreat")
     }
 
-    d$risk__ <- logit(d[[paste0(pol$risk_col, "__")]])
-
     pol$data <- d
+
+    pol$data$risk__ <- .get_risk_col(pol)
+
     if (save_models) {
       pol$m_ptrt <- m_ptrt
       pol$m_resp_ctl <- m1_ctl
