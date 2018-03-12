@@ -22,8 +22,14 @@
 #'   inv.logit(logit(q_majority) + u), where u is in range_q_ratio
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
+#' @param verbose whether or not to print debug messages (0 = none, 1 = results
+#'   only, 2 = everything)
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
+#'
+#' @details If any of the \code{range_} arguments are set to a single value
+#'   (instead of a 2D vector), the corresponding paramter will be fixed and not
+#'   explored for the optimization
 #'
 #' @return a list with the following elements \item{results}{\code{tidy}
 #'   dataframe of second-stage model coefficients after searching for min/max
@@ -42,6 +48,7 @@ optimsens <-
            minority_groups = NULL,
            range_q_ratio = NULL,
            controls = NULL,
+           verbose = TRUE,
            debug = FALSE) {
   # Input validation
   if (!("policy" %in% class(pol))) {
@@ -50,10 +57,6 @@ optimsens <-
 
   if (length(base_group) > 1) {
     stop("Specify a single base group.\n\tGot: ", base_group)
-  }
-
-  if (is.null(controls)) {
-    controls <- pol$controls
   }
 
   if (!is.null(range_q_ratio) && (length(range_q_ratio) != 2)) {
@@ -79,16 +82,16 @@ optimsens <-
 
   # Optimization hyper parameters
   params_lower <- c(
-    range_q[1],   # Min P(u = 1 | base )
+    min(range_q),   # Min P(u = 1 | base )
     # Min P(u = 1 | minority ) or
     # Min log-odds(u = 1 | base) - log-odds(u = 1 | minority)
-    range_q[1],
-    range_dp[1],  # Min alpha_base
-    range_dp[1],  # Min alpha_minority
-    range_d0[1],  # Min delta0_base
-    range_d0[1],  # Min delta0_minority
-    range_d1[1],  # Min delta1_base
-    range_d1[1]   # Min delta1_minority
+    min(range_q),
+    min(range_dp),  # Min alpha_base
+    min(range_dp),  # Min alpha_minority
+    min(range_d0),  # Min delta0_base
+    min(range_d0),  # Min delta0_minority
+    min(range_d1),  # Min delta1_base
+    min(range_d1)   # Min delta1_minority
   )
 
   if (!is.null(range_q_ratio)) {
@@ -96,16 +99,16 @@ optimsens <-
   }
 
   params_upper <- c(
-    range_q[2],   # Max P(u = 1 | base )
+    max(range_q),   # Max P(u = 1 | base )
     # Max P(u = 1 | minority ) or
     # Max log-odds(u = 1 | base) - log-odds(u = 1 | minority)
-    range_q[2],
-    range_dp[2],  # Max alpha_base
-    range_dp[2],  # Max alpha_minority
-    range_d0[2],  # Max delta0_base
-    range_d0[2],  # Max delta0_minority
-    range_d1[2],  # Max delta1_base
-    range_d1[2]   # Max delta1_minority
+    max(range_q),
+    max(range_dp),  # Max alpha_base
+    max(range_dp),  # Max alpha_minority
+    max(range_d0),  # Max delta0_base
+    max(range_d0),  # Max delta0_minority
+    max(range_d1),  # Max delta1_base
+    max(range_d1)   # Max delta1_minority
   )
 
   if (!is.null(range_q_ratio)) {
@@ -170,7 +173,7 @@ optimsens <-
           q_range = !is.null(range_q_ratio),
           controls = controls,
           naive_se = FALSE,
-          verbose = 2
+          verbose = verbose
         ),
         lower = params_lower[free_params],
         upper = params_upper[free_params],

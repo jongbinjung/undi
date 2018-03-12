@@ -7,7 +7,7 @@
 optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
   minority_groups = NULL, range_q_ratio = NULL, controls = NULL,
-  debug = FALSE)
+  verbose = TRUE, debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -38,6 +38,9 @@ inv.logit(logit(q_majority) + u), where u is in range_q_ratio}
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}
 
+\item{verbose}{whether or not to print debug messages (0 = none, 1 = results
+only, 2 = everything)}
+
 \item{debug}{logical flag, if TRUE, returns a list of results and the
 expanded data frame used to fit model}
 }
@@ -51,4 +54,9 @@ a list with the following elements \item{results}{\code{tidy}
 \description{
 Within specified range of sensitivity parameters, find the ones that achieve
 minimum/maximum sensitivity results
+}
+\details{
+If any of the \code{range_} arguments are set to a single value
+  (instead of a 2D vector), the corresponding paramter will be fixed and not
+  explored for the optimization
 }
