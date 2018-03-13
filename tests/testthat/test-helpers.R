@@ -115,6 +115,6 @@ test_that(".compute_auc returns '-' for single-value labels", {
 test_that(".compute_auc returns .5 for single-value predictors", {
   preds <- rep(.5, 10)
   labels <- sample(c(TRUE, FALSE), 10, replace = TRUE)
-  generated <- .compute_auc(preds, labels)
+  generated <- .compute_auc(preds, labels, ret_num = TRUE)
   expect_equal(generated, .5)
 })
