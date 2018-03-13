@@ -132,8 +132,12 @@ inv_logit <- stats::binomial()$linkinv
 #'
 #' @return scalar AUC
 .compute_auc <- function(pred, label) {
-  p <- ROCR::prediction(pred, label)
-  auc <- ROCR::performance(p, "auc")
-  unlist(auc@y.values)
+  if (length(unique(label)) == 2) {
+    p <- ROCR::prediction(pred, label)
+    auc <- ROCR::performance(p, "auc")
+    unlist(auc@y.values)
+  } else {
+    "-"
+  }
 }
 
