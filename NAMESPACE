@@ -2,6 +2,7 @@
 
 S3method(plot,optimsens)
 S3method(print,policy)
+export(compute_bm)
 export(compute_rad)
 export(estimate_policy)
 export(optimsens)
