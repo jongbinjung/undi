@@ -96,13 +96,16 @@ inv_logit <- stats::binomial()$linkinv
 #'   are specified in params. \code{length(params)} should equal \code{sum(free_params == T)}.
 #' @param fixed_param_values (Optional) vector specifing the values of the fixed parameters
 #'   (ie when \code{free_params == F})
+#' @param transform_params logical; whether to transform parameters such with
+#'   logit(q) and exp(delta) --- might improve optimization conditioning
 #' @param q_range if true, the second parameter defines the log odds ratio between
 #'   q for majority and minority
 #'
 #' @return named list of parameters
 .extract_params <- function(params,
-                            free_params = rep(T, 8),
+                            free_params = rep(TRUE, 8),
                             fixed_param_values = NULL,
+                            transform_params = FALSE,
                             q_range = FALSE) {
 
   all_params = numeric(8)
@@ -110,7 +113,21 @@ inv_logit <- stats::binomial()$linkinv
   all_params[!free_params] = fixed_param_values
 
   if (q_range) {
-    all_params[2] = inv_logit(logit(all_params[1]) + all_params[2])
+    if (transform_params) {
+      # qb/qm params are in logit scale
+      all_params[2] = all_params[1] + all_params[2]
+    } else {
+      # qb/qm params are in probability scale
+      all_params[2] = inv_logit(logit(all_params[1]) + all_params[2])
+    }
+  }
+
+  if (transform_params) {
+    # q parameters are in logit scale
+    all_params[1:2] <- inv_logit(all_params[1:2])
+
+    # delta parameters are logged-logodds ....
+    all_params[3:8] <- exp(all_params[3:8])
   }
 
   list(qb  = all_params[1],

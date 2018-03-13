@@ -24,6 +24,8 @@
 #'   within the policy object will be used if not specified
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
+#' @param transform_params logical; whether to transform parameters such with
+#'   logit(q) and log(delta) --- might improve optimization conditioning
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
 #'   only, 2 = everything)
 #' @param debug logical flag, if TRUE, returns a list of results and the
@@ -45,15 +47,16 @@
 #' @export
 optimsens <-
   function(pol,
-           range_q = c(0, 1),
-           range_dp = c(0, log(2)),
-           range_d0 = c(0, log(2)),
-           range_d1 = c(0, log(2)),
+           range_q = c(-Inf, Inf),
+           range_dp = c(-Inf, log(log(2))),
+           range_d0 = c(-Inf, log(log(2))),
+           range_d1 = c(-Inf, log(log(2))),
            base_group = NULL,
            minority_groups = NULL,
            range_q_ratio = NULL,
            controls = NULL,
            include_benchmark = FALSE,
+           transform_params = TRUE,
            verbose = TRUE,
            debug = FALSE) {
   # Input validation
@@ -69,6 +72,10 @@ optimsens <-
     stop("range_q_ratio should be NULL or a vector of length 2")
   }
 
+  # range_q = c(-Inf, Inf)
+  # range_dp = c(-Inf, log(log(2)))
+  # range_d0 = c(-Inf, log(log(2)))
+  # range_d1 = c(-Inf, log(log(2)))
   # range_q = c(0, 1)
   # range_dp = c(0, log(2))
   # range_d0 = c(0, log(2))
@@ -151,8 +158,8 @@ optimsens <-
       tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
 
       init_ <- stats::runif(length(params_lower),
-                            min = params_lower,
-                            max = params_upper)
+                            min = pmax(params_lower, -100),
+                            max = pmin(params_upper, 0))
 
       dplyr::tibble(tag = tag_,  params = list(init_))
   }
@@ -179,6 +186,7 @@ optimsens <-
           q_range = !is.null(range_q_ratio),
           controls = controls,
           naive_se = FALSE,
+          transform_params = transform_params,
           verbose = verbose
         ),
         lower = params_lower[free_params],
@@ -207,10 +215,16 @@ optimsens <-
       dplyr::pull("pars") %>%
       `[[`(1)
 
-    fn <- .get_optim_fn(pol, sgn = sgn,
-                        compare = c(base_group, minor),
-                        controls = controls, naive_se = TRUE,
-                        return_scalar = FALSE)
+    fn <- .get_optim_fn(
+      pol,
+      sgn = sgn,
+      compare = c(base_group, minor),
+      controls = controls,
+      naive_se = TRUE,
+      transform_params = transform_params,
+      return_scalar = FALSE
+    )
+
     ret <- fn(params)
     ret$tag <- tag_
     ret
@@ -264,6 +278,8 @@ optimsens <-
 #'   parameters are free to vary. If NULL, all parameters are allowed to vary
 #' @param fixed_param_values A vector defining the values of the fixed params.
 #'   \code{length(fixed_param_values)} should equal \code{sum(free_params == F)}
+#' @param transform_params logical; whether to transform parameters such with
+#'   logit(q) and log(delta) --- might improve optimization conditioning
 #' @param tag string to tag output with (usefull for parallel output)
 #' @param controls vector of controls
 #' @param q_range if true, the second parameter defines the log odds ratio
@@ -283,6 +299,7 @@ optimsens <-
             compare,
             free_params = NULL,
             fixed_param_values = NULL,
+            transform_params = TRUE,
             tag = "fit",
             controls = NULL,
             q_range = FALSE,
@@ -312,11 +329,12 @@ optimsens <-
   function(params) {
 
     # Unpack parameters
-
     p <- .extract_params(params,
                          free_params = free_params,
                          fixed_param_values = fixed_param_values,
+                         transform_params = transform_params,
                          q_range = q_range)
+
     qb  <- p$qb
     qm  <- p$qm
     ab  <- p$ab
@@ -325,7 +343,6 @@ optimsens <-
     d0m <- p$d0m
     d1b <- p$d1b
     d1m <- p$d1m
-
 
     if (verbose >= 2) {
       cat(sprintf(paste("%s: q=%.2f/%.2f, e(a)=%.2f/%.2f,",
