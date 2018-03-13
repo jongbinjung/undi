@@ -35,3 +35,4 @@ vignettes/*.pdf
 
 # Vim swp files
 *.swp
+inst/doc
