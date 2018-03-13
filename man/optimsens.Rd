@@ -45,11 +45,14 @@ only, 2 = everything)}
 expanded data frame used to fit model}
 }
 \value{
-a list with the following elements \item{results}{\code{tidy}
-  dataframe of second-stage model coefficients after searching for min/max
-  values across specified sensitivy parameter ranges, independently for each
-  minority group} \item{optim}{nested data frame where the \code{$optim}
-  column contains the optimization results}
+a list-type object of class \code{optimsens} with the following
+  elements \item{results}{\code{tidy} dataframe of second-stage model
+  coefficients after searching for min/max values across specified sensitivy
+  parameter ranges, independently for each minority group}
+  \item{optim}{nested data frame where the \code{$optim} column contains the
+  optimization results} \item{base_case}{result from \code{compute_rad} on
+  base policy with specified groups and controls} \item{base_group}{base
+  group used in analysis}
 }
 \description{
 Within specified range of sensitivity parameters, find the ones that achieve

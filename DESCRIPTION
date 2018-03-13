@@ -21,6 +21,7 @@ Imports:
     forcats,
     foreach,
     gbm,
+    ggplot2,
     lazyeval,
     purrr,
     rnr,

@@ -5,6 +5,7 @@
 #'
 #' @docType package
 #' @name undi
+#' @import ggplot2
 #' @importFrom dplyr %>%
 #' @importFrom foreach %:%
 #' @importFrom foreach %dopar%
@@ -12,5 +13,20 @@
 NULL
 
 if(getRversion() >= "2.15.1")
-  utils::globalVariables(c("sgn", "tag", "ip", "optim")
+  utils::globalVariables(
+    c(
+      "sgn",
+      "tag",
+      "ip",
+      "optim",
+      "term",
+      "estimate",
+      "lb",
+      "ub",
+      "cilb",
+      "ciub",
+      "odds_ratio",
+      "std.error.naive"
+    )
+
   )

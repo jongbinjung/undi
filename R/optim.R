@@ -31,11 +31,14 @@
 #'   (instead of a 2D vector), the corresponding paramter will be fixed and not
 #'   explored for the optimization
 #'
-#' @return a list with the following elements \item{results}{\code{tidy}
-#'   dataframe of second-stage model coefficients after searching for min/max
-#'   values across specified sensitivy parameter ranges, independently for each
-#'   minority group} \item{optim}{nested data frame where the \code{$optim}
-#'   column contains the optimization results}
+#' @return a list-type object of class \code{optimsens} with the following
+#'   elements \item{results}{\code{tidy} dataframe of second-stage model
+#'   coefficients after searching for min/max values across specified sensitivy
+#'   parameter ranges, independently for each minority group}
+#'   \item{optim}{nested data frame where the \code{$optim} column contains the
+#'   optimization results} \item{base_case}{result from \code{compute_rad} on
+#'   base policy with specified groups and controls} \item{base_group}{base
+#'   group used in analysis}
 #'
 #' @export
 optimsens <-
@@ -191,7 +194,7 @@ optimsens <-
                     optim = list(opt))
     }
 
-  # Extract final results from
+  # Extract final results from optimized parameters
   coefs <-
     foreach(ip = 1:nrow(optim_res), .combine = dplyr::bind_rows) %dopar% {
     minor <- optim_res[ip, ][["minor"]]
@@ -212,7 +215,18 @@ optimsens <-
 
 
 
-  list(results = coefs, optim = optim_res)
+  ret <- list(
+    results = coefs,
+    optim = optim_res,
+    base_case = compute_rad(pol,
+                            controls = controls,
+                            base_group = base_group,
+                            minority_groups = minority_groups),
+    base_group = base_group)
+
+  class(ret) <- c("optimsens", class(ret))
+
+  return(ret)
 }
 
 
