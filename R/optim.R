@@ -213,15 +213,29 @@ optimsens <-
     ret
     }
 
+  base_rad <- compute_rad(
+    pol,
+    controls = controls,
+    base_group = base_group,
+    minority_groups = minority_groups
+  )
+  base_rad$method <- "rad"
 
+  base_bm <-  dplyr::bind_rows(
+    compute_bm(pol, base_group = base_group, minority_groups = minority_groups),
+    compute_bm(
+      pol,
+      base_group = base_group,
+      minority_groups = minority_groups,
+      kitchen_sink = TRUE
+    )
+  )
+  base_bm$method <- "bm"
 
   ret <- list(
     results = coefs,
     optim = optim_res,
-    base_case = compute_rad(pol,
-                            controls = controls,
-                            base_group = base_group,
-                            minority_groups = minority_groups),
+    base_case = dplyr::bind_rows(base_bm, base_rad),
     base_group = base_group)
 
   class(ret) <- c("optimsens", class(ret))

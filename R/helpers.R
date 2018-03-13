@@ -40,9 +40,7 @@ inv_logit <- stats::binomial()$linkinv
   }
 
   f <- .make_formula(cn_lhs, c(controls, cn_tgt))
-  lbl_controls <- ifelse(is.null(controls), "None",
-                         ifelse(length(controls) > 5, "Kitchen sink",
-                                paste(controls, collapse = ", ")))
+  lbl_controls <- paste(c(cn_tgt, controls), collapse = ", ")
   fun(f, d) %>%
     broom::tidy() %>%
     dplyr::mutate(controls = lbl_controls)

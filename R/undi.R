@@ -26,6 +26,7 @@ if(getRversion() >= "2.15.1")
       "cilb",
       "ciub",
       "odds_ratio",
+      "std.error",
       "std.error.naive"
     )
 

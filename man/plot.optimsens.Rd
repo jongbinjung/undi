@@ -4,10 +4,14 @@
 \alias{plot.optimsens}
 \title{Plot optimized sensitivity results for a policy}
 \usage{
-\method{plot}{optimsens}(x, ...)
+\method{plot}{optimsens}(x, include_benchmark = TRUE, ...)
 }
 \arguments{
 \item{x}{object of class \code{optimsens}}
+
+\item{include_benchmark}{logical; whether to include the two extreme
+benchmark test results; if TRUE, the returned ggplot object is facetted by
+test type (default = TRUE)}
 
 \item{...}{ignored; included for S3 generic/method consistency}
 }
