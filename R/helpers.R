@@ -129,15 +129,27 @@ inv_logit <- stats::binomial()$linkinv
 #'
 #' @param pred scalar predictions
 #' @param label binary labels
+#' @param ret_num logical, whether to return a numerical value (TRUE) or a
+#'   formatted string (FALSE: default)
 #'
 #' @return scalar AUC
-.compute_auc <- function(pred, label) {
+.compute_auc <- function(pred, label, ret_num = FALSE) {
   if (length(unique(label)) == 2) {
     p <- ROCR::prediction(pred, label)
     auc <- ROCR::performance(p, "auc")
-    unlist(auc@y.values)
+
+    if (ret_num) {
+      return(unlist(auc@y.values))
+    } else {
+      return(format(unlist(auc@y.values) * 100))
+    }
   } else {
-    "-"
+    print(unique(label))
+    if (ret_num) {
+      return(-1)
+    } else {
+      return("-")
+    }
   }
 }
 
