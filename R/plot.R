@@ -27,15 +27,23 @@ plot.optimsens <- function(x, include_benchmark = TRUE, ...) {
   pd <- merge(base_pd, sens_pd, by = "term")
 
   if (include_benchmark) {
-    bm_pd <- x$base_case[!(x$base_case$controls %in% rad_ctls), ]
-    bm_pd <- bm_pd %>%
-      dplyr::mutate(ciub = exp(estimate + 2 * std.error),
-                    cilb = exp(estimate - 2 * std.error))
-    bm_pd$odds_ratio <- exp(bm_pd$estimate)
+    if ("bm" %in% x$base_case$method) {
+      bm_pd <- x$base_case[!(x$base_case$controls %in% rad_ctls), ]
+      bm_pd <- bm_pd %>%
+        dplyr::mutate(ciub = exp(estimate + 2 * std.error),
+                      cilb = exp(estimate - 2 * std.error))
+      bm_pd$odds_ratio <- exp(bm_pd$estimate)
 
-    pd <- dplyr::bind_rows(bm_pd, pd)
+      pd <- dplyr::bind_rows(bm_pd, pd)
 
-    pd$controls <- forcats::fct_inorder(pd$controls)
+      pd$controls <- forcats::fct_inorder(pd$controls)
+    } else {
+      warning(paste("include_benchmark = TRUE;",
+                    "but benchmark results not computed in optimsens object\n",
+                    "rerun optimsens() with include_benchmark = TRUE if",
+                    "you want to plot benchmark results"))
+      include_benchmark <- FALSE
+    }
   }
 
   p <- ggplot(pd, aes(x = term, y = odds_ratio)) +

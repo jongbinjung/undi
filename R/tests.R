@@ -138,7 +138,6 @@ compute_bm <-
     }
 
     if (kitchen_sink) {
-      message("kitchen_sink == TRUE: ignore controls and use all features")
       controls <- pol$features
     }
 
@@ -154,7 +153,8 @@ compute_bm <-
 
       coefs <- .pull_coefs(tmp_df, pol$treatment, pol$grouping,
                            c(controls),
-                           fun = pol$fit2)
+                           fun = function(f, d, w)
+                             stats::glm(f, d, family = binomial))
 
       coefs[grepl(pol$grouping, coefs$term), ]
     })

@@ -22,6 +22,8 @@
 #'   inv.logit(logit(q_majority) + u), where u is in range_q_ratio
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
+#' @param include_benchmark logical; whether to include the two extreme
+#'   benchmark test results (default: FALSE)
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
 #'   only, 2 = everything)
 #' @param debug logical flag, if TRUE, returns a list of results and the
@@ -51,6 +53,7 @@ optimsens <-
            minority_groups = NULL,
            range_q_ratio = NULL,
            controls = NULL,
+           include_benchmark = FALSE,
            verbose = TRUE,
            debug = FALSE) {
   # Input validation
@@ -213,29 +216,35 @@ optimsens <-
     ret
     }
 
-  base_rad <- compute_rad(
+  base_case <- compute_rad(
     pol,
     controls = controls,
     base_group = base_group,
     minority_groups = minority_groups
   )
-  base_rad$method <- "rad"
+  base_case$method <- "rad"
 
-  base_bm <-  dplyr::bind_rows(
-    compute_bm(pol, base_group = base_group, minority_groups = minority_groups),
-    compute_bm(
-      pol,
-      base_group = base_group,
-      minority_groups = minority_groups,
-      kitchen_sink = TRUE
+  if (include_benchmark) {
+    base_bm <-  dplyr::bind_rows(
+      compute_bm(pol,
+                 base_group = base_group,
+                 minority_groups = minority_groups),
+      compute_bm(
+        pol,
+        base_group = base_group,
+        minority_groups = minority_groups,
+        kitchen_sink = TRUE
+      )
     )
-  )
-  base_bm$method <- "bm"
+    base_bm$method <- "bm"
+
+    base_case <- dplyr::bind_rows(base_bm, base_case)
+  }
 
   ret <- list(
     results = coefs,
     optim = optim_res,
-    base_case = dplyr::bind_rows(base_bm, base_rad),
+    base_case = base_case,
     base_group = base_group)
 
   class(ret) <- c("optimsens", class(ret))
