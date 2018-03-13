@@ -1,7 +1,14 @@
-plot.optimsens <- function(os, controls = NULL) {
-  base_pd <- os$base_case
+#' Plot optimized sensitivity results for a policy
+#'
+#' @param x object of class \code{optimsens}
+#' @param ... ignored; included for S3 generic/method consistency
+#'
+#' @return a ggplot object
+#' @export
+plot.optimsens <- function(x, ...) {
+  base_pd <- x$base_case
   base_pd$odds_ratio <- exp(base_pd$estimate)
-  sens_pd <- os$results %>%
+  sens_pd <- x$results %>%
     dplyr::group_by(term) %>%
     dplyr::mutate(ciub = estimate + 2 * std.error.naive,
                   cilb = estimate - 2 * std.error.naive) %>%
@@ -21,6 +28,6 @@ plot.optimsens <- function(os, controls = NULL) {
     geom_errorbar(aes(ymin = cilb, ymax = ciub),
                   size = .8, width = 0, alpha = .6) +
     geom_point(color = "black", fill = "white", size = 3, shape = 21) +
-    scale_y_continuous(sprintf("Odds of treatment (v. %s)\n", os$base_group)) +
+    scale_y_continuous(sprintf("Odds of treatment (v. %s)\n", x$base_group)) +
     scale_x_discrete(element_blank())
 }
