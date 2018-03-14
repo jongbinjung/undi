@@ -88,7 +88,22 @@ test_that(".expand_params throws errors for wrong specification", {
 })
 
 # Test .extract_params() --------------------------------------------------
-test_that(".extract_params maps as expected", {
+test_that(".extract_params maps as expected with default params", {
+  params <- stats::runif(8)
+  target <- list(qb  = params[1],
+                 qm  = params[2],
+                 ab  = params[3],
+                 am  = params[3],
+                 d0b = params[5],
+                 d0m = params[5],
+                 d1b = params[7],
+                 d1m = params[7])
+  generated <- .extract_params(params)
+
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params maps as expected with subgroup validity", {
   params <- stats::runif(8)
   target <- list(qb  = params[1],
                  qm  = params[2],
@@ -98,10 +113,99 @@ test_that(".extract_params maps as expected", {
                  d0m = params[6],
                  d1b = params[7],
                  d1m = params[8])
-  generated <- .extract_params(params)
+
+  generated <- .extract_params(params, allow_sgv = TRUE)
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params maps as expected with no subgroup validity", {
+  params <- stats::runif(8)
+  target <- list(qb  = params[1],
+                 qm  = params[2],
+                 ab  = params[3],
+                 am  = params[3],
+                 d0b = params[5],
+                 d0m = params[5],
+                 d1b = params[7],
+                 d1m = params[7])
+
+  # Without setting any free params
+  generated <- .extract_params(params, allow_sgv = FALSE)
+  expect_equal(generated, target)
+
+  # With explicit free params
+  free_params <- c(T, T, T, F, T, F, T, F)
+  # The fixed parameter values shouldn't make any difference
+  fpv <- stats::runif(sum(!free_params))
+  generated <- .extract_params(params[free_params],
+                               free_params = free_params,
+                               fixed_param_values = fpv,
+                               allow_sgv = FALSE)
+  expect_equal(generated, target)
+})
+
+test_that(".extract_params maps as expected with q_range set", {
+  params <- stats::runif(8)
+  target <- list(qb  = params[1],
+                 qm  = inv_logit(logit(params[1]) + params[2]),
+                 ab  = params[3],
+                 am  = params[3],
+                 d0b = params[5],
+                 d0m = params[5],
+                 d1b = params[7],
+                 d1m = params[7])
+
+  generated <- .extract_params(params,
+                               q_range = TRUE,
+                               allow_sgv = FALSE)
 
   expect_equal(generated, target)
 })
+
+test_that(".extract_params maps as expected with fixed parameters", {
+  params <- stats::runif(8)
+  free_params <- sample(c(T, F), 8, replace = TRUE)
+  fpv <- stats::runif(sum(!free_params))
+
+  # With subgroup validity
+  target <- list(qb  = params[1],
+                 qm  = params[2],
+                 ab  = params[3],
+                 am  = params[4],
+                 d0b = params[5],
+                 d0m = params[6],
+                 d1b = params[7],
+                 d1m = params[8])
+  target[!free_params] <- fpv
+
+  generated <- .extract_params(params[free_params],
+                               free_params = free_params,
+                               fixed_param_values = fpv,
+                               allow_sgv = TRUE)
+  expect_equal(generated, target)
+
+  # Without subgroup validity
+  target <- list(qb  = params[1],
+                 qm  = params[2],
+                 ab  = params[3],
+                 am  = params[4],
+                 d0b = params[5],
+                 d0m = params[6],
+                 d1b = params[7],
+                 d1m = params[8])
+  target[!free_params] <- fpv
+  target[[4]] <- target[[3]]
+  target[[6]] <- target[[5]]
+  target[[8]] <- target[[7]]
+
+  generated <- .extract_params(params[free_params],
+                               free_params = free_params,
+                               fixed_param_values = fpv,
+                               allow_sgv = FALSE)
+
+  expect_equal(generated, target)
+})
+
 
 
 # Test .compute_auc() -----------------------------------------------------

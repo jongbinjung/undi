@@ -16,10 +16,14 @@
 #'   otherwise set to the first of sorted unique values
 #' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
-#' @param range_q_ratio (Optional) 2D vector. If set, the minority and majority
+#' @param range_q_ratio (Optional) 2D vector. If set, the minority and base
 #'   values of q will not be allowed to vary independently, but instead will be
 #'   constrained to vary by the given range of log odds. ie q_minority =
-#'   inv.logit(logit(q_majority) + u), where u is in range_q_ratio
+#'   inv.logit(logit(q_base) + u), where u is in range_q_ratio
+#' @param allow_sgv logical; whether to allow for subgroup validity; i.e., if
+#'   \code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+#'   allowed to vary between base/minority groups, but if \code{FALSE}, a single
+#'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
 #' @param include_benchmark logical; whether to include the two extreme
@@ -52,6 +56,7 @@ optimsens <-
            base_group = NULL,
            minority_groups = NULL,
            range_q_ratio = NULL,
+           allow_sgv = FALSE,
            controls = NULL,
            include_benchmark = FALSE,
            verbose = TRUE,
@@ -118,10 +123,16 @@ optimsens <-
   )
 
   if (!is.null(range_q_ratio)) {
-    params_upper[2] = range_q_ratio[2]
+    params_upper[2] <- range_q_ratio[2]
   }
 
-  free_params = abs(params_upper - params_lower) > 2*.Machine$double.eps
+  free_params <- abs(params_upper - params_lower) > 2*.Machine$double.eps
+
+  if (!allow_sgv) {
+    # Treat minority delta parameters as "fixed" values
+    # TODO: Might want to eliminate "magic number" indices
+    free_params[c(4, 6, 8)] <- FALSE
+  }
 
   if (any(params_upper[free_params] < params_lower[free_params])) {
     stop("Upper value in range must be equal to or larger than lower value")
@@ -177,6 +188,7 @@ optimsens <-
           compare = c(base_group, minor),
           tag = tag_,
           q_range = !is.null(range_q_ratio),
+          allow_sgv = allow_sgv,
           controls = controls,
           naive_se = FALSE,
           verbose = verbose
@@ -267,7 +279,11 @@ optimsens <-
 #' @param tag string to tag output with (usefull for parallel output)
 #' @param controls vector of controls
 #' @param q_range if true, the second parameter defines the log odds ratio
-#'   between q for majority and minority
+#'   between q for base and minority
+#' @param allow_sgv logical; whether to allow for subgroup validity; i.e., if
+#'   \code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+#'   allowed to vary between base/minority groups, but if \code{FALSE}, a single
+#'   value for each delta parameter will be used for each base/minority pair
 #' @param naive_se whether or not to compute "naive" std.errors in sensitivity;
 #'   FALSE by default, to avoid unnecessary computation, but should be computed
 #'   for final results once extreme values have been identified
@@ -286,6 +302,7 @@ optimsens <-
             tag = "fit",
             controls = NULL,
             q_range = FALSE,
+            allow_sgv = FALSE,
             naive_se = FALSE,
             verbose = TRUE,
             return_scalar = TRUE) {
@@ -312,11 +329,11 @@ optimsens <-
   function(params) {
 
     # Unpack parameters
-
     p <- .extract_params(params,
                          free_params = free_params,
                          fixed_param_values = fixed_param_values,
-                         q_range = q_range)
+                         q_range = q_range,
+                         allow_sgv = allow_sgv)
     qb  <- p$qb
     qm  <- p$qm
     ab  <- p$ab
@@ -325,7 +342,6 @@ optimsens <-
     d0m <- p$d0m
     d1b <- p$d1b
     d1m <- p$d1m
-
 
     if (verbose >= 2) {
       cat(sprintf(paste("%s: q=%.2f/%.2f, e(a)=%.2f/%.2f,",
@@ -350,7 +366,7 @@ optimsens <-
       ret <- ret[["estimate"]]
 
       if (verbose) {
-        cat(sprintf("  %s coef: %.4f\n", tag, ret))
+        cat(sprintf("\t%s coef: %.4f\n", tag, ret))
       }
 
       ret <- ret * sgn

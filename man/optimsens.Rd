@@ -6,8 +6,9 @@
 \usage{
 optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
-  minority_groups = NULL, range_q_ratio = NULL, controls = NULL,
-  include_benchmark = FALSE, verbose = TRUE, debug = FALSE)
+  minority_groups = NULL, range_q_ratio = NULL, allow_sgv = FALSE,
+  controls = NULL, include_benchmark = FALSE, verbose = TRUE,
+  debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -30,10 +31,15 @@ otherwise set to the first of sorted unique values}
 \item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
 
-\item{range_q_ratio}{(Optional) 2D vector. If set, the minority and majority
+\item{range_q_ratio}{(Optional) 2D vector. If set, the minority and base
 values of q will not be allowed to vary independently, but instead will be
 constrained to vary by the given range of log odds. ie q_minority =
-inv.logit(logit(q_majority) + u), where u is in range_q_ratio}
+inv.logit(logit(q_base) + u), where u is in range_q_ratio}
+
+\item{allow_sgv}{logical; whether to allow for subgroup validity; i.e., if
+\code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+allowed to vary between base/minority groups, but if \code{FALSE}, a single
+value for each delta parameter will be used for each base/minority pair}
 
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}

@@ -92,18 +92,24 @@ inv_logit <- stats::binomial()$linkinv
 #' Extract sensitivity parameters from a list of parameters for optimization
 #'
 #' @param params vector of parameters
-#' @param free_params (Optional) logical vector of length 8 indicating which parameters
-#'   are specified in params. \code{length(params)} should equal \code{sum(free_params == T)}.
-#' @param fixed_param_values (Optional) vector specifing the values of the fixed parameters
-#'   (ie when \code{free_params == F})
-#' @param q_range if true, the second parameter defines the log odds ratio between
-#'   q for majority and minority
+#' @param free_params (Optional) logical vector of length 8 indicating which
+#'   parameters are specified in params. \code{length(params)} should equal
+#'   \code{sum(free_params == TRUE)}.
+#' @param fixed_param_values (Optional) vector specifing the values of the fixed
+#'   parameters (ie when \code{free_params == FALSE})
+#' @param q_range if true, the second parameter defines the log odds ratio
+#'   between q for base and minority groups
+#' @param allow_sgv logical; whether to allow for subgroup validity; i.e., if
+#'   \code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+#'   allowed to vary between base/minority groups, but if \code{FALSE}, a single
+#'   value for each delta parameter will be used for each base/minority pair
 #'
 #' @return named list of parameters
 .extract_params <- function(params,
                             free_params = rep(T, 8),
                             fixed_param_values = NULL,
-                            q_range = FALSE) {
+                            q_range = FALSE,
+                            allow_sgv = FALSE) {
 
   all_params = numeric(8)
   all_params[free_params] = params
@@ -111,6 +117,12 @@ inv_logit <- stats::binomial()$linkinv
 
   if (q_range) {
     all_params[2] = inv_logit(logit(all_params[1]) + all_params[2])
+  }
+
+  if (!allow_sgv) {
+    all_params[4] <- all_params[3]
+    all_params[6] <- all_params[5]
+    all_params[8] <- all_params[7]
   }
 
   list(qb  = all_params[1],
