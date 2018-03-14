@@ -5,7 +5,7 @@
 \title{(Re)Estimate treatment and response surface models for a policy}
 \usage{
 estimate_policy(pol, ptreat = NULL, resp_ctl = NULL, resp_trt = NULL,
-  calibrate = FALSE, save_models = FALSE, ...)
+  calibrate = FALSE, features = NULL, save_models = FALSE, ...)
 }
 \arguments{
 \item{pol}{a policy object}
@@ -20,7 +20,11 @@ given each treatment regime (\code{ctl}, \code{trt}); useful for cases
 where outcome under certain treatment regimes is deterministic (e.g.,
 probability of finding illegal weapon if NOT frisked is 0)}
 
-\item{calibrate}{whether or not to use platt scaling to calibrate predictions}
+\item{calibrate}{whether or not to use platt scaling to calibrate predictions
+(default: FALSE)}
+
+\item{features}{(Optional) character vector of features to use; if
+\code{NULL}, \code{pol$features} is used}
 
 \item{save_models}{whether or not fitted models should be returned}
 

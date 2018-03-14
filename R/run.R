@@ -192,6 +192,9 @@ policy <-
 #'   where outcome under certain treatment regimes is deterministic (e.g.,
 #'   probability of finding illegal weapon if NOT frisked is 0)
 #' @param calibrate whether or not to use platt scaling to calibrate predictions
+#'   (default: FALSE)
+#' @param features (Optional) character vector of features to use; if
+#'   \code{NULL}, \code{pol$features} is used
 #' @param save_models whether or not fitted models should be returned
 #' @param ... additional arguments passed to model fitting functions \code{fit1}
 #'   and \code{fit_ptreat}
@@ -205,6 +208,7 @@ estimate_policy <- function(pol,
                             resp_ctl = NULL,
                             resp_trt = NULL,
                             calibrate = FALSE,
+                            features = NULL,
                             save_models = FALSE,
                             ...) {
     # Input validation
@@ -213,6 +217,10 @@ estimate_policy <- function(pol,
     }
 
     d <- pol$data
+
+    if (!is.null(features)) {
+      pol$features <- features
+    }
 
     train_ind <- d$fold__ == "train"
     ctl_train_ind <- train_ind & (d[[pol$treatment]] == 0)
