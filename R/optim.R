@@ -344,10 +344,7 @@ optimsens <-
     d1m <- p$d1m
 
     if (verbose >= 2) {
-      cat(sprintf(paste("%s: q=%.2f/%.2f, e(a)=%.2f/%.2f,",
-                        "e(d0)=%.2f/%.2f, e(d1)=%.2f/%.2f\n"),
-                  tag, qb, qm, exp(ab), exp(am), exp(d0b), exp(d0m),
-                  exp(d1b), exp(d1m)))
+      cat(sprintf("%s: %s\n", tag, .format_pars(p)))
     }
 
     ret <- sensitivity(

@@ -35,3 +35,61 @@ print.policy <- function(x, ...) {
     )
   )
 }
+
+#' \code{print} method of object class \code{\link{optimsens}}
+#'
+#' @param x object of class optimsens
+#' @param ... other stuff (for S3 consistency)
+#'
+#' @export
+print.optimsens <- function(x, ...) {
+  tags <- x$results %>%
+    dplyr::group_by(term) %>%
+    dplyr::arrange(estimate, .by_group = TRUE) %>%
+    dplyr::pull("tag")
+
+  tag_length <- max(vapply(tags, nchar, FUN.VALUE = 0)) + 1
+  ests <- format(x$results$estimate)
+
+  for (tag in tags) {
+    ind_res <- x$results$tag == tag
+    ind_opt <- x$optim$tag == tag
+
+    est <- ests[ind_res]
+    par <- x$optim[ind_opt, ]$optim[[1]]$par
+    cat(format(tag, justify = "r", width = tag_length),
+        " = ", est, " from ", .format_pars(par), "\n")
+  }
+}
+
+#' Format optimsens parameters to a single line for printing
+#'
+#' @param pars optimsens parameters
+#'
+#' @return formatted string for printing
+.format_pars <- function(pars) {
+  sq <- sprintf("q=%.2f/%.2f", pars[["qb"]], pars[["qm"]])
+
+  w <- getOption("digits") + 3
+
+  if (pars[["ab"]] == pars[["am"]]) {
+    sa <- paste0("a=", format(pars[["ab"]], width = w))
+  } else {
+    sa <- paste0("a=", format(pars[["ab"]], width = w), "/",
+                 format(pars[["am"]], width = w))
+  }
+
+  if (pars[["d0b"]] == pars[["d0m"]]) {
+    sd0 <- paste0("d0=", format(pars[["d0b"]], width = w))
+  } else {
+    sd0 <- paste0("d0=", format(pars[["d0b"]], width = w), "/", format(pars[["d0m"]], width = w))
+  }
+
+  if (pars[["d1b"]] == pars[["d1m"]]) {
+    sd1 <- paste0("d1=", format(pars[["d1b"]], width = w))
+  } else {
+    sd1 <- paste0("d1=", format(pars[["d1b"]], width = w), "/", format(pars[["d1m"]], width = w))
+  }
+
+  return(paste(sq, sa, sd0, sd1, sep = " | "))
+}
