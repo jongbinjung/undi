@@ -154,7 +154,7 @@ compute_bm <-
       coefs <- .pull_coefs(tmp_df, pol$treatment, pol$grouping,
                            c(controls),
                            fun = function(f, d, w)
-                             stats::glm(f, d, family = binomial))
+                             stats::glm(f, d, family = stats::binomial))
 
       coefs[grepl(pol$grouping, coefs$term), ]
     })

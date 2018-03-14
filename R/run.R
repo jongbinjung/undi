@@ -175,7 +175,8 @@ policy <-
                            resp_ctl = resp_ctl,
                            resp_trt = resp_trt,
                            calibrate = calibrate,
-                           save_models = save_models)
+                           save_models = save_models,
+                           ...)
 
     return(ret)
   }
