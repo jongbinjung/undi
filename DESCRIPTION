@@ -26,6 +26,7 @@ Imports:
     purrr,
     rnr,
     ROCR,
-    stats
+    stats,
+    tidyr
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
