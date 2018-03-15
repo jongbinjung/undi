@@ -4,12 +4,15 @@
 \alias{summary.optimsens}
 \title{Summary of optimsens object}
 \usage{
-\method{summary}{optimsens}(x, ...)
+\method{summary}{optimsens}(object, ...)
 }
 \arguments{
-\item{x}{optimsens object}
+\item{object}{optimsens object}
 
 \item{...}{other stuff}
+}
+\value{
+summary data frame with min/max values of each group term
 }
 \description{
 Summary of optimsens object
