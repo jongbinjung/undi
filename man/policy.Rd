@@ -4,16 +4,17 @@
 \alias{policy}
 \title{Create policy object}
 \usage{
-policy(formula, data, outcome, train = 0.5, fit1 = NULL, pred1 = NULL,
-  fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL, risk = "resp_trt",
-  ptreat = NULL, resp_ctl = NULL, resp_trt = NULL, calibrate = FALSE,
-  save_models = FALSE, seed = 1234, ...)
+policy(formula, data, outcome, train = 0.5, risk = "resp_trt",
+  model = names(models()), down_sample = 1, fit1 = NULL, pred1 = NULL,
+  fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL, ptreat = NULL,
+  resp_ctl = NULL, resp_trt = NULL, calibrate = FALSE,
+  save_models = FALSE, seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{
 \item{formula}{a formula in the form of \code{treatment ~ grouping_variable +
 other predictors} where the LHS is the treatment column, first element on
 the RHS is the grouping variable (e.g., Race), and the remainder of the RHS
-specifies the predictors for first-stage model}
+specifies the predictors (features) for treatment/response models}
 
 \item{data}{data frame to use; must include all the columns specified in
 \code{formula} and given in the \code{outcome} parameter}
@@ -26,15 +27,26 @@ and "test" within \code{data} to use in splitting the data, or (3) a
 logical vector of equal length as \code{nrow(data)} used to index training
 data}
 
+\item{risk}{One of \code{"resp_ctl"} or \code{"resp_trt"}, indicating which
+treatment regime should be used as the risk score (default:
+\code{resp_trt})}
+
+\item{model}{character of modelling method to use for risk models; run
+\code{names(undi::models())} to get list of available models}
+
+\item{down_sample}{(Optional) proportion (between 0 and 1) or number (greater
+than 1) of rows to sample, if down sampling the data; default is 1 (i.e.,
+use all data)}
+
 \item{fit1}{a function of the form f(formula, data, ...) used for fitting the
-first-stage model; using \code{gbm} by default}
+first-stage model; overides \code{model}}
 
 \item{pred1}{a function of the form f(model, data, formula) used for
 generating predictions from the first-stage model; the formula argument can
 be ignored within the function body, but the function should still accept
 it; some prediction functions (e.g., glmnet) require the original formula;
 predictions should be on probability scale, while "risk" will always be on
-logit scale}
+logit scale; overrides \code{model}}
 
 \item{fit2}{a function of the form f(formula, data, weights = NULL) used for
 fitting the second-stage model; using \code{glm} with \code{family =
@@ -50,12 +62,7 @@ fitting propensity (probability of treatment) models. If not specified,
 generating propensity predictions. If not specified, \code{pred1} is used
 by default.}
 
-\item{risk}{One of \code{"resp_ctl"} or \code{"resp_trt"}, indicating which
-treatment regime should be used as the risk score (default:
-\code{resp_trt})}
-
-\item{ptreat}{(Optional) default value for probability of treatment; if
-provided, it will override \code{fit_ptreat} and \code{pred_ptreat}}
+\item{ptreat}{(Optional) default value for probability of treatment;}
 
 \item{resp_ctl}{(Optional)}
 

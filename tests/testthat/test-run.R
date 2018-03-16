@@ -36,3 +36,13 @@ test_that("policy can generate a trivial object with custom values", {
   expect_equal(policy_obj$data$resp_ctl__, rep(0, nrow(data)))
   expect_equal(policy_obj$data$resp_trt__, rep(1, nrow(data)))
 })
+
+
+
+# Test modeling capabilities ----------------------------------------------
+
+test_that("default model is gbm", {
+  target <- "gbm"
+  generated <- names(models())[[1]]
+  expect_equal(target, generated)
+})
