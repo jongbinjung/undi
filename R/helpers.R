@@ -162,3 +162,33 @@ inv_logit <- stats::binomial()$linkinv
   }
 }
 
+#' Down-sample a data set
+#'
+#' @param d original data frame
+#' @param n parameter for down-sampling; if between 0 and 1, treated as a
+#'   fraction, if larger than 1, rounded and treated as the number of rows to
+#'   sample
+#'
+#' @return down-sampled data frame
+.down_sample <- function(d, n) {
+  N <- nrow(d)
+
+  if (n == 1) {
+    return(d)
+  }
+
+  if (n <= 0) {
+    stop("Down sampling parameter must be greater than 0.\n\tGot: ", n)
+  }
+
+  if (n < 1) {
+    ret <- dplyr::sample_frac(d, size = n)
+  } else {
+    ret <- dplyr::sample_n(d, size = n)
+  }
+
+  message("Down-sampled data to ", nrow(ret), "/", N,
+          " (", format(nrow(ret)/N * 100), "%) rows")
+
+  return(ret)
+}

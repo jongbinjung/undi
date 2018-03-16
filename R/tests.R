@@ -8,6 +8,10 @@
 #'   otherwise set to the first of sorted unique values
 #' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
+#' @param down_sample (Optional) proportion (between 0 and 1) or number (greater
+#'   than 1) of rows to sample, if down sampling the (test) data; default is 1
+#'   (i.e., use all data)
+#' @param seed random seed to set
 #'
 #' @return tidy data frame of rad coefficients
 #'
@@ -16,7 +20,10 @@ compute_rad <-
   function(pol,
            controls = NULL,
            base_group = NULL,
-           minority_groups = NULL) {
+           minority_groups = NULL,
+           down_sample = 1,
+           seed = round(stats::runif(1)*1e4)) {
+    set.seed(seed)
     # Input validation
     if (!("policy" %in% class(pol))) {
       stop("Expected object of class policy")
@@ -27,6 +34,7 @@ compute_rad <-
     }
 
     d <- pol$data
+
     group_col <- d[[pol$grouping]]
     members <- unique(group_col)
 
@@ -55,7 +63,7 @@ compute_rad <-
       }
     }
 
-    test_df <- d[d$fold__ == "test", ]
+    test_df <- .down_sample(d[d$fold__ == "test", ], down_sample)
 
     ret <- purrr::map_dfr(minority_groups, function(comp) {
       target_group_ind <- test_df[[pol$grouping]] %in% c(base_group, comp)
