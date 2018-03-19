@@ -347,6 +347,30 @@ models <- function() {
         stats::glm(f, data = d, family = stats::quasibinomial, ...),
       pred = function(m, d, f)
         stats::predict.glm(m, newdata = d, type = "response")
+    ),
+    sgd = list(
+      fit = function(f, d, ...)
+        sgd::sgd(f, data = d, model = "glm",
+                 model.control = list(family = "binomial", ...)),
+      pred = function(m, d, f)
+        predict_sgd(m, d, f, type = "response")
     )
   )
+}
+
+
+#' Wrapper to compute predictions for sgd model
+#'
+#' @param m sgd object
+#' @param d data frame to generate predictions on
+#' @param f formula used in sgd object; used to transform \code{d} to a
+#'   \code{design matrix}
+#' @param type the type of prediction to return (default: response)
+#' @param ... other arguments to pass to predict.sgd
+#'
+#' @return prediction for sgd model
+#' @export
+predict_sgd <- function(m, d, f, type = "response", ...) {
+  mm <- stats::model.matrix(f, d)
+  sgd::predict_all(m, mm, type, ...)
 }
