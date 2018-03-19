@@ -93,6 +93,10 @@ compute_rad <-
 #'   otherwise set to the first of sorted unique values
 #' @param minority_groups (Optional) groups to compare to the base group; by
 #'   default, set to every unique value other than the base group
+#' @param down_sample (Optional) proportion (between 0 and 1) or number (greater
+#'   than 1) of rows to sample, if down sampling the (test) data; default is 1
+#'   (i.e., use all data)
+#' @param seed random seed to set
 #'
 #' @details Current implementation uses \code{loess} as a "non-parametric"
 #'   estimate
@@ -105,7 +109,9 @@ compute_nprad <-
   function(pol,
            controls = NULL,
            base_group = NULL,
-           minority_groups = NULL) {
+           minority_groups = NULL,
+           down_sample = 1,
+           seed = round(stats::runif(1)*1e4)) {
     # Input validation
     if (!("policy" %in% class(pol))) {
       stop("Expected object of class policy")
@@ -148,7 +154,7 @@ compute_nprad <-
       }
     }
 
-    test_df <- d[d$fold__ == "test", ]
+    test_df <- .down_sample(d[d$fold__ == "test", ], down_sample)
 
     # Fit loess models for each group (in parallel)
     loess_ms <-
