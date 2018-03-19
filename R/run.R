@@ -47,6 +47,10 @@
 #'   probability of finding illegal weapon if NOT frisked is 0)
 #' @param calibrate whether or not to use platt scaling to calibrate predictions
 #' @param save_models whether or not fitted models should be returned
+#' @param recast_df (Optional) whether \code{data} should be re-cast as a
+#'   \code{data.frame}; this might be useful if the modeling function requires a
+#'   model matrix, and \code{data} contains character columns --- recasting as a
+#'   data frame will convert all character columns to factors
 #' @param seed random seed to use
 #' @param ... additional arguments passed to first-stage model fitting function,
 #'   \code{fit1} and \code{fit_ptreat}
@@ -88,11 +92,16 @@ policy <-
            resp_trt = NULL,
            calibrate = FALSE,
            save_models = FALSE,
+           recast_df = FALSE,
            seed = round(stats::runif(1)*1e4),
            ...) {
     set.seed(seed)
 
     model <- match.arg(model)
+
+    if (recast_df) {
+      data <- as.data.frame(unclass(data))
+    }
 
     data <- .down_sample(data, down_sample)
 

@@ -8,7 +8,8 @@ policy(formula, data, outcome, train = 0.5, risk = "resp_trt",
   model = names(models()), down_sample = 1, fit1 = NULL, pred1 = NULL,
   fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL, ptreat = NULL,
   resp_ctl = NULL, resp_trt = NULL, calibrate = FALSE,
-  save_models = FALSE, seed = round(stats::runif(1) * 10000), ...)
+  save_models = FALSE, recast_df = FALSE, seed = round(stats::runif(1) *
+  10000), ...)
 }
 \arguments{
 \item{formula}{a formula in the form of \code{treatment ~ grouping_variable +
@@ -74,6 +75,11 @@ probability of finding illegal weapon if NOT frisked is 0)}
 \item{calibrate}{whether or not to use platt scaling to calibrate predictions}
 
 \item{save_models}{whether or not fitted models should be returned}
+
+\item{recast_df}{(Optional) whether \code{data} should be re-cast as a
+\code{data.frame}; this might be useful if the modeling function requires a
+model matrix, and \code{data} contains character columns --- recasting as a
+data frame will convert all character columns to factors}
 
 \item{seed}{random seed to use}
 
