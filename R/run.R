@@ -360,7 +360,7 @@ models <- function() {
     sgd = list(
       fit = function(f, d, ...)
         sgd::sgd(f, data = d, model = "glm",
-                 model.control = list(family = "binomial", ...)),
+                 model.control = list(family = "binomial"), ...),
       pred = function(m, d, f)
         predict_sgd(m, d, f, type = "response")
     )
