@@ -381,5 +381,5 @@ models <- function() {
 #' @export
 predict_sgd <- function(m, d, f, type = "response", ...) {
   mm <- stats::model.matrix(f, d)
-  sgd::predict_all(m, mm, type, ...)
+  stats::predict(m, mm, type, ...)
 }
