@@ -97,7 +97,19 @@ fit_glmnet <- function(f, d, ...) {
 predict4mm <- function(m, d, f, ...) {
   mm <- stats::model.matrix(f, d)
 
-  stats::predict(m, mm, ...)
+  preds <- stats::predict(m, mm, ...)
+
+  if (is.null(dim(preds))) {
+    return(preds)
+  } else if (length(dim(preds)) == 1) {
+    dim(preds) <- NULL
+    return(preds)
+  } else if (length(dim(preds)) == 2 & dim(preds)[2] == 1) {
+    dim(preds) <- NULL
+    return(preds)
+  } else {
+    stop("Predictions have unexpected dimensions for model class: ", class(m))
+  }
 }
 
 
