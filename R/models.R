@@ -20,21 +20,22 @@ models <- function() {
     ),
     lasso = list(
       fit = function(f, d, ...)
-        fit_glmnet(f, d, family = "binomial", alpha = 1, ...),
+        undi::fit_glmnet(f, d, family = "binomial", alpha = 1, ...),
       pred = function(m, d, f)
-        predict4mm(m, d, f, type = "response", s = "lambda.min")
+        undi::predict4mm(m, d, f, type = "response", s = "lambda.min")
     ),
     ridge = list(
       fit = function(f, d, ...)
-        fit_glmnet(f, d, family = "binomial", alpha = 0, ...),
+        undi::fit_glmnet(f, d, family = "binomial", alpha = 0, ...),
       pred = function(m, d, f)
-        predict4mm(m, d, f, type = "response", s = "lambda.min")
+        undi::predict4mm(m, d, f, type = "response", s = "lambda.min")
     ),
     sgd = list(
       fit = function(f, d, ...)
-        fit_sgd(f, d, model = "glm",
-                model.control = list(family = "binomial"), ...),
-      pred = function(m, d, f) predict4mm(m, d, f, type = "response")
+        undi::fit_sgd(f, d, model = "glm",
+                      model.control = list(family = "binomial"), ...),
+      pred = function(m, d, f)
+        undi::predict4mm(m, d, f, type = "response")
     )
   )
 }
