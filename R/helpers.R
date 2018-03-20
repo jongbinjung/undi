@@ -192,3 +192,30 @@ inv_logit <- stats::binomial()$linkinv
 
   return(ret)
 }
+
+#' Safely scale/center covariates, avoiding NaNs
+#'
+#' @param x a numeric matrix (like object)
+#' @param center either a logical vector or numeric vector equal to the number
+#'   of columns of x
+#' @param scale either a logical vector or numeric vector equal to the number of
+#'   columns of x
+#'
+#' @return list with objects \code{ind} and \code{scaled}, the columns that are
+#'   safely scaled and corresponding scaled object
+.safe_scale <- function(x, center = NULL, scale = NULL) {
+  if (is.null(center)) {
+    center = TRUE
+  }
+
+  if (is.null(scale)) {
+    scale = TRUE
+    # Figure out which covariates are "safe" to scale
+    ind <- apply(x, 2, function(col) stats::sd(col) > 0)
+  } else {
+    ind <- colnames(x) %in% names(scale)
+  }
+
+  list(ind = ind,
+       scaled = scale(x[, ind], center = center, scale = scale))
+}

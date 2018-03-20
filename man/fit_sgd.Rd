@@ -15,14 +15,9 @@ fit_sgd(f, d, ...)
 \item{...}{additional arguments for \code{\link[sgd]{sgd}}}
 }
 \value{
-an \code{sgd} object, recast as \code{class} \code{sgd.scaled}, with
-  additional attributes from \code{\link[base]{scale}}
+an \code{sgd} object
 }
 \description{
 Wrapper for fitting \code{\link[sgd]{sgd}} models with standardized design
 matrix
-}
-\details{
-\code{sgd} models fit with scaling \strong{must} use accompanying
-  \code{\link{predict_sgd}} function to generate properly scaled predictions
 }

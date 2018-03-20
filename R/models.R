@@ -34,11 +34,7 @@ models <- function() {
 #' @param d data object
 #' @param ... additional arguments for \code{\link[sgd]{sgd}}
 #'
-#' @details \code{sgd} models fit with scaling \strong{must} use accompanying
-#'   \code{\link{predict_sgd}} function to generate properly scaled predictions
-#'
-#' @return an \code{sgd} object, recast as \code{class} \code{sgd.scaled}, with
-#'   additional attributes from \code{\link[base]{scale}}
+#' @return an \code{sgd} object
 #' @export
 fit_sgd <- function(f, d, ...) {
   mf <- stats::model.frame(f, d)
@@ -61,16 +57,12 @@ fit_sgd <- function(f, d, ...) {
     stop("No valid terms found in data for specified formula: ", format(f))
   }
 
-  # TODO(jongbin): somewhat hacky ...
-  ind <- colnames(x) != "(Intercept)"
-
-  scaled <- scale(x[, ind])
-  x[, ind] <- scaled
+  scaled <- .safe_scale(x)
+  x[, scaled$ind] <- scaled$scaled
   m <- sgd::sgd(x, Y, ...)
-  attr(m, "scaled:scale") <- attr(scaled, "scaled:scale")
-  attr(m, "scaled:center") <- attr(scaled, "scaled:center")
-  attr(m, "scaled:names") <- colnames(scaled)
-  class(m) <- c("sgd.scaled", class(m))
+  m$coef[scaled$ind] <-
+    (m$coef[scaled$ind] + attr(scaled$scaled, "scaled:center")) *
+    attr(scaled$scaled, "scaled:scale")
 
   return(m)
 }
@@ -92,11 +84,6 @@ predict_sgd <- function(m, d, f, type = "response", ...) {
          class(m))
   }
   mm <- stats::model.matrix(f, d)
-  ind <- colnames(mm) %in% attr(m, "scaled:names")
-
-  mm[, ind] <- scale(mm[, ind],
-                     center = attr(m, "scaled:center"),
-                     scale = attr(m, "scaled:scale"))
 
   stats::predict(m, mm, type, ...)
 }
