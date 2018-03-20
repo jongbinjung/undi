@@ -79,10 +79,6 @@ fit_sgd <- function(f, d, ...) {
 #' @return prediction for sgd model
 #' @export
 predict_sgd <- function(m, d, f, type = "response", ...) {
-  if (!inherits(m, "sgd.scaled")) {
-    stop("Default SGD method must be fit with fit_sgd();\n\tGot type(s): ",
-         class(m))
-  }
   mm <- stats::model.matrix(f, d)
 
   stats::predict(m, mm, type, ...)
