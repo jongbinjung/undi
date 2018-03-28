@@ -25,6 +25,8 @@
 #' @param naive_se logical flag, if TRUE, return std.error from naive
 #'   (non-sensitivity) test, as well as std.errors from final weighted
 #'   regression
+#' @param fit_fn string indicating the fitting proceedure used.
+#'   Options are "glm" (default) or "sgd"
 #' @param verbose logical flag, if TRUE, print relevant messages for user
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
@@ -54,6 +56,7 @@ sensitivity <-
            resp_trt = NULL,
            controls = NULL,
            naive_se = TRUE,
+           fit_fn = 'glm',
            verbose = interactive(),
            debug = FALSE) {
 
@@ -61,6 +64,10 @@ sensitivity <-
     stop("Expected object of class policy")
   }
 
+  if (!(fit_fn %in% c('glm', 'sgd'))) {
+    stop('Fitting function ', fit_fn, ' not supported')
+  }
+    
   if (is.null(controls)) {
     controls <= pol$controls
   }
@@ -166,11 +173,39 @@ sensitivity <-
 
   df_$weights <- weights
 
-  coefs <- .pull_coefs(df_,
-                       pol$treatment,
-                       pol$grouping,
-                       c("risk__", controls),
-                       fun = wfit2)
+  df_ <- filter(df_, weights != 0)
+  
+  # wfit2 (called from .pull_coefs below) searches for
+  # a 'weights' object in the enviroment, so we need to
+  # make sure it has the right dimensions
+  # TODO: wfit2 shouldn't work like this
+  weights = weights[weights != 0]
+  
+  if (fit_fn == 'glm') {
+    coefs <- .pull_coefs(df_,
+                         pol$treatment,
+                         pol$grouping,
+                         c("risk__", controls),
+                         fun = wfit2)
+  } else if (fit_fn == 'sgd') {
+    
+    form = formula(paste0(' ~ ', paste0(c('risk__', pol$grouping, controls), collapse = ' + ')))
+    print(form)
+    X = model.matrix(form, df_)
+    
+    sgd_result <- fit_sgd(formula(paste0(pol$treatment, ' ~ ', paste0(c('risk__', pol$grouping, controls), collapse = ' + '))),
+                          df_,
+                          model = 'glm',
+                          model.control = list(family = 'binomial', weights = df_$weights),
+                          sgd.control = list(lr = 'adagrad', reltol = 1e-8, shuffle = T))
+    
+    coefs <- data.frame(
+      term = colnames(X),
+      estimate = sgd_result$coefficients,
+      std.error = NA,
+      controls = paste(c(pol$grouping, 'risk__', controls), collapse = ", "))
+  }
+  
 
   # Replace std.error with naive estimates
   coefs <- coefs[, c("term", "estimate", "std.error", "controls")]

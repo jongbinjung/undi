@@ -31,6 +31,6 @@ Imports:
     stats,
     tidyr
 Remotes: 
-    airoldilab/sgd
+    samcorbettdavies/sgd
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr

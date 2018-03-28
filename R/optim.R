@@ -26,6 +26,9 @@
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
+#' @param optim_fit string indicating the fitting proceedure used within optimization.
+#'   Options are "glm" (default) or "sgd"
+#' @param optim_control list of control parameters passed to \code{optim}
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
@@ -58,6 +61,8 @@ optimsens <-
            range_q_ratio = NULL,
            allow_sgv = FALSE,
            controls = NULL,
+           optim_fit = 'glm',
+           optim_control = list(),
            include_benchmark = FALSE,
            verbose = TRUE,
            debug = FALSE) {
@@ -190,12 +195,14 @@ optimsens <-
           q_range = !is.null(range_q_ratio),
           allow_sgv = allow_sgv,
           controls = controls,
+          optim_fit = optim_fit,
           naive_se = FALSE,
           verbose = verbose
         ),
         lower = params_lower[free_params],
         upper = params_upper[free_params],
-        method = 'L-BFGS-B'
+        method = 'L-BFGS-B',
+        control = optim_control
       )
 
       # Convert parameters back to 8-D vector
@@ -287,6 +294,8 @@ optimsens <-
 #' @param naive_se whether or not to compute "naive" std.errors in sensitivity;
 #'   FALSE by default, to avoid unnecessary computation, but should be computed
 #'   for final results once extreme values have been identified
+#' @param optim_fit string indicating the fitting proceedure used.
+#'   Options are "glm" (default) or "sgd"
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
 #'   only, 2 = everything)
 #' @param return_scalar logical, whether to return a single scalar values (TRUE)
@@ -304,9 +313,14 @@ optimsens <-
             q_range = FALSE,
             allow_sgv = FALSE,
             naive_se = FALSE,
+            optim_fit = 'glm',
             verbose = TRUE,
             return_scalar = TRUE) {
 
+  if (!(optim_fit %in% c('glm', 'sgd'))) {
+    stop('Fitting function ', optim_fit, ' not supported')
+  }
+    
   # Validate input
   if (length(compare) != 2) {
     stop("Can only get optim fn for comparison of two groups, got ",
@@ -356,6 +370,7 @@ optimsens <-
       d1 = c(d1b, d1m),
       controls = controls,
       naive_se = naive_se,
+      fit_fn = optim_fit,
       verbose = FALSE
     )
 

@@ -31,9 +31,11 @@ models <- function() {
         undi::predict4mm(m, d, f, type = "response", s = "lambda.min")
     ),
     sgd = list(
-      fit = function(f, d, ...)
+      fit = function(f, d, model.control = list(family = "binomial"),
+                     sgd.control = list(lr = 'adagrad', reltol = 1e-8, shuffle = T), ...)
         undi::fit_sgd(f, d, model = "glm",
-                      model.control = list(family = "binomial"), ...),
+                      model.control = model.control,
+                      sgd.control = sgd.control, ...),
       pred = function(m, d, f)
         undi::predict4mm(m, d, f, type = "response")
     )
@@ -55,13 +57,21 @@ fit_sgd <- function(f, d, ...) {
   Y <- dm$Y
   x <- dm$x
 
-  scaled <- .safe_scale(x)
-  x[, scaled$ind] <- scaled$scaled
+  x <- .safe_scale(x)
   m <- sgd::sgd(x, Y, ...)
-  m$coef[scaled$ind] <-
-    (m$coef[scaled$ind] + attr(scaled$scaled, "scaled:center")) *
-    attr(scaled$scaled, "scaled:scale")
 
+  m$scale = attr(x, "scaled:scale")
+  m$center = attr(x, "scaled:center")
+  m$formula = f
+  
+  m$coefficients[1] <- m$coefficients[1] -
+    sum(m$center[-1]*m$coefficients[-1]/m$scale[-1])
+  
+  m$coefficients[-1] <-
+    m$coefficients[-1]/m$scale[-1]
+  
+  m$coefficients <- setNames(m$coefficients[,1], colnames(x))
+  
   return(m)
 }
 
