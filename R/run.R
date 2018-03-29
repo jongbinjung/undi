@@ -259,7 +259,7 @@ estimate_policy <- function(pol,
       d$resp_trt_pre_calib__ <- pol$pred1(m1_trt, d, out_formula)
 
       if (calibrate) {
-        calib_formula <- .make_formula(pol$outcome, "resp_trt_pre_calib__")
+        calib_formula <- .make_formula(pol$outcome, c("resp_trt_pre_calib__", pol$grouping))
 
         d$resp_trt__ <-
           stats::predict.glm(stats::glm(calib_formula,

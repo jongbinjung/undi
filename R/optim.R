@@ -235,12 +235,20 @@ optimsens <-
     ret
     }
 
-  base_case <- compute_rad(
-    pol,
-    controls = controls,
-    base_group = base_group,
-    minority_groups = minority_groups
-  )
+  base_case <- dplyr::bind_rows(
+    lapply(
+      minority_groups,
+      function(group) {
+        sensitivity(pol, 0, 0, 0, 0, compare = c(base_group, group),
+                    controls = controls, fit_fn = optim_fit)
+      }))
+    
+  #   compute_rad(
+  #   pol,
+  #   controls = controls,
+  #   base_group = base_group,
+  #   minority_groups = minority_groups
+  # )
   base_case$method <- "rad"
 
   if (include_benchmark) {
