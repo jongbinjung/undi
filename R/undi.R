@@ -7,6 +7,7 @@
 #' @name undi
 #' @import ggplot2
 #' @importFrom dplyr %>%
+#' @importFrom dplyr n
 #' @importFrom foreach %:%
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach
@@ -16,6 +17,20 @@ if(getRversion() >= "2.15.1")
   utils::globalVariables(
     c(
       ":=",
+      "ab",
+      "am",
+      "d0",
+      "d0b",
+      "d0m",
+      "d1",
+      "d1b",
+      "d1m",
+      "dp",
+      "maxparam",
+      "maxq",
+      "minq",
+      "qb",
+      "qm",
       "group",
       "sgn",
       "bound",

@@ -63,15 +63,15 @@ fit_sgd <- function(f, d, ...) {
   m$scale = attr(x, "scaled:scale")
   m$center = attr(x, "scaled:center")
   m$formula = f
-  
+
   m$coefficients[1] <- m$coefficients[1] -
     sum(m$center[-1]*m$coefficients[-1]/m$scale[-1])
-  
+
   m$coefficients[-1] <-
     m$coefficients[-1]/m$scale[-1]
-  
-  m$coefficients <- setNames(m$coefficients[,1], colnames(x))
-  
+
+  m$coefficients <- stats::setNames(m$coefficients[,1], colnames(x))
+
   return(m)
 }
 

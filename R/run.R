@@ -152,17 +152,19 @@ policy <-
     # column, based on the length of p_train
     if (length(train) == 1) {
       if(train > 0 & train < 1) {
-        
+
         # Randomly assigned train/test splits stratified by treatment, group and outcome
         data <- data %>%
-          group_by(!!as.name(treatment), !!as.name(grouping), !!as.name(outcome)) %>%
-          mutate(
-            fold__ = sample(c(rep('train', ceiling(train * n())),
-                              rep('test', n() - ceiling(train * n()))),
-                            size = n())
-          ) %>%
-          ungroup()
-          
+          dplyr::group_by(!!as.name(treatment),
+                          !!as.name(grouping),
+                          !!as.name(outcome)) %>%
+          dplyr::mutate(fold__ = sample(c(
+            rep('train', ceiling(train * n())),
+            rep('test', n() - ceiling(train * n()))
+          ),
+          size = n())) %>%
+          dplyr::ungroup()
+
       } else if (is.character(train)) {
         # TODO(jongbin): Check that specified column is "proper"
         data$fold__ <- data[[train]]
@@ -333,7 +335,7 @@ estimate_policy <- function(pol,
     # TODO: Check for possible model misspecification--
     # AUC < 0.6, miscalibration by group, few unique prediction
     # values, etc.
-    
+
     pol$data <- d
 
     pol$data$risk__ <- .get_risk_col(pol)

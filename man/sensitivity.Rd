@@ -6,7 +6,7 @@
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
   resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
-  verbose = interactive(), debug = FALSE)
+  fit_fn = "glm", verbose = interactive(), debug = FALSE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -44,6 +44,9 @@ within the policy object will be used if not specified}
 \item{naive_se}{logical flag, if TRUE, return std.error from naive
 (non-sensitivity) test, as well as std.errors from final weighted
 regression}
+
+\item{fit_fn}{string indicating the fitting proceedure used.
+Options are "glm" (default) or "sgd"}
 
 \item{verbose}{logical flag, if TRUE, print relevant messages for user}
 
