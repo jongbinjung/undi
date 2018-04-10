@@ -1,4 +1,4 @@
-#' Find parameter values that min/maximize sensitivity results
+#' Find parameter values that min/maximize sensitivity results via optim
 #'
 #' Within specified range of sensitivity parameters, find the ones that achieve
 #' minimum/maximum sensitivity results
@@ -274,6 +274,194 @@ optimsens <-
 }
 
 
+#' Find parameter values that min/maximize sensitivity results via grid search
+#'
+#' Within specified values of sensitivity parameters, find the ones that achieve
+#' minimum/maximum sensitivity results
+#'
+#' @param pol object of class \code{policy}
+#' @param qs vector q values to search
+#' @param dps values to search for change in log-odds of treat = 1 if u = 1
+#' @param d0s values to search for change in log-odds of response = 1 if treat =
+#'   0 and u = 1
+#' @param d1s values to search for change in log-odds of response = 1 if treat =
+#'   1 and u = 1
+#' @param base_group (Optional) single group that acts as the pivot/base; by
+#'   default, if the grouping variable is a factor, set to the first level,
+#'   otherwise set to the first of sorted unique values
+#' @param minority_groups (Optional) groups to compare to the base group; by
+#'   default, set to every unique value other than the base group
+#' @param allow_sgv logical; whether to allow for subgroup validity; i.e., if
+#'   \code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+#'   allowed to vary between base/minority groups, but if \code{FALSE}, a single
+#'   value for each delta parameter will be used for each base/minority pair
+#' @param controls vector of legitimate controls to use; the ones specified
+#'   within the policy object will be used if not specified
+#' @param include_benchmark logical; whether to include the two extreme
+#'   benchmark test results (default: FALSE)
+#' @param verbose whether or not to print debug messages (0 = none, 1 = results
+#'   only, 2 = everything)
+#'
+#' @return a list-type object of class \code{gridsens} with the following
+#'   elements \item{results}{\code{tidy} dataframe of second-stage model
+#'   coefficients after searching for min/max values across specified sensitivy
+#'   parameter values, independently for each minority group}
+#'   \item{grid}{results from full grid}
+#'   \item{base_case}{result from \code{compute_rad} on base policy with
+#'   specified groups and controls} \item{base_group}{base group used in
+#'   analysis}
+#'
+#' @export
+gridsens <-
+  function(pol,
+           qs = seq(.1, .9, .1),
+           dps = c(0, log(2)),
+           d0s = c(0, log(2)),
+           d1s = c(0, log(2)),
+           base_group = NULL,
+           minority_groups = NULL,
+           allow_sgv = FALSE,
+           controls = NULL,
+           include_benchmark = FALSE,
+           verbose = TRUE) {
+  # Input validation
+  if (!("policy" %in% class(pol))) {
+    stop("Expected object of class policy")
+  }
+
+  if (length(base_group) > 1) {
+    stop("Specify a single base group.\n\tGot: ", base_group)
+  }
+
+  group_col <- pol$data[[pol$grouping]]
+  members <- unique(group_col)
+
+  check_groups <- sapply(c(base_group, minority_groups),
+                         function(x) x %in% members)
+  if (!all(check_groups)) {
+    stop(sprintf("%s - not members of %s",
+                 paste0(c(base_group, minority_groups)[!check_groups],
+                        collapse = ","),
+                 pol$grouping))
+  }
+
+  params_grid <- .get_params_grid(qs, dps, d0s, d1s, allow_sgv)
+
+  if (is.null(base_group)) {
+    if (is.factor(group_col)) {
+      base_group <- levels(group_col)[1]
+    } else {
+      base_group <- unique(group_col)[1]
+    }
+  }
+
+  if (is.null(minority_groups)) {
+    if (is.factor(group_col)) {
+      minority_groups <- levels(group_col)[-1]
+    } else {
+      minority_groups <- unique(group_col)[-1]
+    }
+  }
+
+  # Optimize for min/max over each minority group
+  grid_res <- foreach(ip = 1:nrow(params_grid),
+                      .combine = dplyr::bind_rows,
+                      .multicombine = TRUE) %:%
+    foreach(minor = minority_groups,
+            .combine = dplyr::bind_rows,
+            .multicombine = TRUE) %dopar% {
+      params <- params_grid[ip, ]
+
+      if (verbose >= 2) {
+        cat(sprintf("grid: %s\n", .format_pars(params)))
+      }
+
+      ret <- sensitivity(
+        pol,
+        compare = c(base_group, minor),
+        q = c(params$qb, params$qm),
+        dp = c(params$ab, params$am),
+        d0 = c(params$d0b, params$d0m),
+        d1 = c(params$d1b, params$d1m),
+        controls = controls,
+        naive_se = FALSE,
+        verbose = FALSE
+        ) %>%
+        dplyr::mutate(pars = list(params), minor = minor)
+  }
+
+  grid_opt <- grid_res %>%
+    dplyr::group_by(term, controls) %>%
+    dplyr::mutate(max = max(estimate), min = min(estimate)) %>%
+    dplyr::filter(estimate == max | estimate == min) %>%
+    # Remove duplicate maxima/minima (by selecting top-most result)
+    dplyr::group_by(estimate, add = TRUE) %>%
+    dplyr::slice(1)
+
+  # Extract final results from optimized parameters
+  coefs <-
+    foreach(ip = 1:nrow(grid_opt), .combine = dplyr::bind_rows) %dopar% {
+    params <- grid_opt[ip, ] %>%
+      dplyr::pull("pars") %>%
+      `[[`(1)
+
+    minor <- grid_opt[ip, ]$minor
+
+    ret <- sensitivity(
+      pol,
+      compare = c(base_group, minor),
+      q = c(params$qb, params$qm),
+      dp = c(params$ab, params$am),
+      d0 = c(params$d0b, params$d0m),
+      d1 = c(params$d1b, params$d1m),
+      controls = controls,
+      naive_se = TRUE,
+      verbose = FALSE
+      ) %>%
+      dplyr::mutate(pars = list(params))
+
+    ret
+    }
+
+  base_case <- dplyr::bind_rows(
+    lapply(
+      minority_groups,
+      function(group) {
+        sensitivity(pol, 0, 0, 0, 0, compare = c(base_group, group),
+                    controls = controls)
+      }))
+
+  base_case$method <- "rad"
+
+  if (include_benchmark) {
+    base_bm <-  dplyr::bind_rows(
+      compute_bm(pol,
+                 base_group = base_group,
+                 minority_groups = minority_groups),
+      compute_bm(
+        pol,
+        base_group = base_group,
+        minority_groups = minority_groups,
+        kitchen_sink = TRUE
+      )
+    )
+    base_bm$method <- "bm"
+
+    base_case <- dplyr::bind_rows(base_bm, base_case)
+  }
+
+  ret <- list(
+    results = coefs,
+    grid = grid_res,
+    base_case = base_case,
+    base_group = base_group)
+
+  class(ret) <- c("gridsens", class(ret))
+
+  return(ret)
+}
+
+
 #' Generate subroutine for computing sensitized race coefficients for single
 #' minority group v. whites
 #'
@@ -322,7 +510,7 @@ optimsens <-
   if (!(optim_fit %in% c('glm', 'sgd'))) {
     stop('Fitting function ', optim_fit, ' not supported')
   }
-    
+
   # Validate input
   if (length(compare) != 2) {
     stop("Can only get optim fn for comparison of two groups, got ",
@@ -390,3 +578,69 @@ optimsens <-
   }
 }
 
+
+#' Generate data frame grid of parameter values, given possible values
+#'
+#' @param qs vector q values to search
+#' @param dps values to search for change in log-odds of treat = 1 if u = 1
+#' @param d0s values to search for change in log-odds of response = 1 if treat =
+#'   0 and u = 1
+#' @param d1s values to search for change in log-odds of response = 1 if treat =
+#'   1 and u = 1
+#' @param allow_sgv logical; whether to allow for subgroup validity; i.e., if
+#'   \code{TRUE}, the delta parameters (\code{dp}, \code{d0}, \code{d1}) will be
+#'   allowed to vary between base/minority groups, but if \code{FALSE}, a single
+#'   value for each delta parameter will be used for each base/minority pair
+#'
+#' @return data frame where each row represents a unique combination of possible
+#'   parameter values
+.get_params_grid <- function(qs, dps, d0s, d1s, allow_sgv) {
+  if (allow_sgv) {
+    params_list <-
+      list(
+        qb = qs,
+        qm = qs,
+        ab = dps,
+        am = dps,
+        d0b = d0s,
+        d0m = d0s,
+        d1b = d1s,
+        d1m = d1s
+      )
+    params_grid <- purrr::cross_df(params_list)
+  } else {
+    params_list <-
+      list(
+        qb = qs,
+        qm = qs,
+        dp = dps,
+        d0 = d0s,
+        d1 = d1s
+      )
+    params_grid <- purrr::cross_df(params_list) %>%
+      dplyr::mutate(
+        ab = dp,
+        am = dp,
+        d0b = d0,
+        d0m = d0,
+        d1b = d1,
+        d1m = d1
+      ) %>%
+      dplyr::select(-dp,-d0,-d1)
+  }
+
+  # TODO(jongbin): Better way of filtering "insignificant" parameter combos?
+  params_grid <- params_grid %>%
+    dplyr::mutate(
+      maxparam = pmax(ab, am, d0b, d0m, d1b, d1m),
+      minq = pmin(qb, qm),
+      maxq = pmax(qb, qm)
+    ) %>%
+    dplyr::filter(maxparam != 0,
+                  minq != 1,
+                  maxq != 0) %>%
+    dplyr::select(-maxparam,-minq,-maxq)
+
+
+  return(params_grid)
+}
