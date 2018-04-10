@@ -189,7 +189,6 @@ sensitivity <-
                          fun = wfit2)
   } else if (fit_fn == 'sgd') {
     form <- .make_formula(NULL, c('risk__', pol$grouping, controls))
-    print(form)
     X <- stats::model.matrix(form, df_)
 
     sgd_result <- fit_sgd(
