@@ -1,12 +1,12 @@
-#' Summary of optimsens object
+#' Summary of sens object
 #'
-#' @param object optimsens object
+#' @param object \code{sens} object
 #' @param ... other stuff
 #'
 #' @return summary data frame with min/max values of each group term
 #'
 #' @export
-summary.optimsens <- function(object, ...) {
+summary.sens <- function(object, ...) {
   object$results %>%
     tidyr::separate(tag, into = c("group", "bound"), sep = "_") %>%
     dplyr::select(term, estimate, bound) %>%

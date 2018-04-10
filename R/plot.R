@@ -1,6 +1,6 @@
-#' Plot optimized sensitivity results for a policy
+#' Plot min/max sensitivity results for a policy from a \code{sens} object
 #'
-#' @param x object of class \code{optimsens}
+#' @param x object of class \code{sens}
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results; if TRUE, the returned ggplot object is facetted by
 #'   test type (default = TRUE)
@@ -8,7 +8,7 @@
 #'
 #' @return a ggplot object
 #' @export
-plot.optimsens <- function(x, include_benchmark = TRUE, ...) {
+plot.sens <- function(x, include_benchmark = TRUE, ...) {
   rad_ctls <- unique(x$results$controls)
   sens_pd <- x$results %>%
     dplyr::group_by(term) %>%
