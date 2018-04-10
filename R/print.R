@@ -36,13 +36,14 @@ print.policy <- function(x, ...) {
   )
 }
 
-#' \code{print} method of object class \code{\link{optimsens}}
+#' \code{print} method of object class \code{sens} (parent of
+#' \code{\link{optimsens}}, and \code{\link{gridsens}})
 #'
-#' @param x object of class optimsens
+#' @param x object of class sens
 #' @param ... other stuff (for S3 consistency)
 #'
 #' @export
-print.optimsens <- function(x, ...) {
+print.sens <- function(x, ...) {
   tags <- x$results %>%
     dplyr::group_by(term) %>%
     dplyr::arrange(estimate, .by_group = TRUE) %>%
@@ -53,10 +54,9 @@ print.optimsens <- function(x, ...) {
 
   for (tag in tags) {
     ind_res <- x$results$tag == tag
-    ind_opt <- x$optim$tag == tag
 
     est <- ests[ind_res]
-    par <- x$optim[ind_opt, ]$optim[[1]]$par
+    par <- x$results[ind_res, ]$pars[[1]]
     cat(format(tag, justify = "r", width = tag_length),
         " = ", est, " from ", .format_pars(par), "\n")
   }

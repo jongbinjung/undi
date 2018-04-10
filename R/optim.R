@@ -231,7 +231,11 @@ optimsens <-
                         controls = controls, naive_se = TRUE,
                         return_scalar = FALSE)
     ret <- fn(params)
-    ret$tag <- tag_
+
+    ret <- ret %>%
+      dplyr::mutate(tag = tag_,
+                    pars = list(params))
+
     ret
     }
 
@@ -268,7 +272,7 @@ optimsens <-
     base_case = base_case,
     base_group = base_group)
 
-  class(ret) <- c("optimsens", class(ret))
+  class(ret) <- c("optimsens", "sens", class(ret))
 
   return(ret)
 }
@@ -396,7 +400,8 @@ gridsens <-
     dplyr::filter(estimate == max | estimate == min) %>%
     # Remove duplicate maxima/minima (by selecting top-most result)
     dplyr::group_by(estimate, add = TRUE) %>%
-    dplyr::slice(1)
+    dplyr::slice(1) %>%
+    dplyr::mutate(tag = paste(minor, ifelse(estimate == max, "max", "min"), sep = "_"))
 
   # Extract final results from optimized parameters
   coefs <-
@@ -406,6 +411,7 @@ gridsens <-
       `[[`(1)
 
     minor <- grid_opt[ip, ]$minor
+    tag <- grid_opt[ip, ]$tag
 
     ret <- sensitivity(
       pol,
@@ -420,6 +426,7 @@ gridsens <-
       ) %>%
       dplyr::mutate(pars = list(params))
 
+    ret$tag <- tag
     ret
     }
 
@@ -456,7 +463,7 @@ gridsens <-
     base_case = base_case,
     base_group = base_group)
 
-  class(ret) <- c("gridsens", class(ret))
+  class(ret) <- c("gridsens", "sens", class(ret))
 
   return(ret)
 }
