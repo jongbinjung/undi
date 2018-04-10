@@ -318,7 +318,7 @@ optimsens <-
 #' @export
 gridsens <-
   function(pol,
-           qs = seq(.1, .9, .1),
+           qs = c(0, .4, .5, .6, 1),
            dps = c(0, log(2)),
            d0s = c(0, log(2)),
            d1s = c(0, log(2)),

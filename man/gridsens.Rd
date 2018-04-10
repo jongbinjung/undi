@@ -4,7 +4,7 @@
 \alias{gridsens}
 \title{Find parameter values that min/maximize sensitivity results via grid search}
 \usage{
-gridsens(pol, qs = seq(0.1, 0.9, 0.1), dps = c(0, log(2)), d0s = c(0,
+gridsens(pol, qs = c(0, 0.4, 0.5, 0.6, 1), dps = c(0, log(2)), d0s = c(0,
   log(2)), d1s = c(0, log(2)), base_group = NULL, minority_groups = NULL,
   allow_sgv = FALSE, controls = NULL, include_benchmark = FALSE,
   verbose = TRUE)
