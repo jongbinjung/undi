@@ -26,8 +26,8 @@
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
-#' @param optim_fit string indicating the fitting proceedure used within optimization.
-#'   Options are "glm" (default) or "sgd"
+#' @param optim_fit string indicating the fitting proceedure used within
+#'   optimization. Options are "glm" (default) or "sgd"
 #' @param optim_control list of control parameters passed to \code{optim}
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
