@@ -11,6 +11,7 @@
 #' @importFrom foreach %:%
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach
+#' @importFrom rlang !!
 NULL
 
 if(getRversion() >= "2.15.1")
