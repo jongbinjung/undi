@@ -102,7 +102,7 @@ plot.policy <- function(x, nbins = 10, ...) {
     dplyr::summarize(N = n(),
                      pout = mean(!!v_outcome),
                      mresp = mean(resp_ctl__)) %>%
-    dplyr::mutate(type = "Outcome given control")
+    dplyr::mutate(type = sprintf("Outcome given %s = 0", x$treatment))
 
   calib_trt_pd <- x$data %>%
     dplyr::filter(as.numeric(!!v_treatment) == 1, fold__ == "test") %>%
@@ -111,7 +111,7 @@ plot.policy <- function(x, nbins = 10, ...) {
     dplyr::summarize(N = n(),
                      pout = mean(!!v_outcome),
                      mresp = mean(resp_trt__)) %>%
-    dplyr::mutate(type = "Outcome given treatment")
+    dplyr::mutate(type = sprintf("Outcome given %s = 1", x$treatment))
 
   calib_pd <- dplyr::bind_rows(calib_ctl_pd, calib_trt_pd)
 
@@ -120,8 +120,10 @@ plot.policy <- function(x, nbins = 10, ...) {
                 color = theme_get()$panel.grid.minor$colour) +
     geom_point(aes_string(size = "N", color = x$grouping)) +
     scale_size_area() +
-    scale_x_continuous("\nEstimated risk", labels = scales::percent) +
-    scale_y_continuous("Proportion of outcome = 1\n", labels = scales::percent) +
+    scale_x_continuous(sprintf("\nEstimated risk (%s)", x$risk_col),
+                       labels = scales::percent) +
+    scale_y_continuous(sprintf("Proportion of %s = 1\n", x$outcome),
+                       labels = scales::percent) +
     facet_grid(. ~ type) +
     theme(legend.position = "top")
 
