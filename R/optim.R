@@ -79,11 +79,6 @@ optimsens <-
     stop("range_q_ratio should be NULL or a vector of length 2")
   }
 
-  # range_q = c(0, 1)
-  # range_dp = c(0, log(2))
-  # range_d0 = c(0, log(2))
-  # range_d1 = c(0, log(2))
-
   group_col <- pol$data[[pol$grouping]]
   members <- unique(group_col)
 
