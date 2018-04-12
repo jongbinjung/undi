@@ -96,7 +96,7 @@ plot.policy <- function(x, nbins = 10, ...) {
 
   # Risk calibration plots, conditioned on control/treatment
   calib_ctl_pd <- x$data %>%
-    dplyr::filter(!!v_treatment == 0) %>%
+    dplyr::filter(as.numeric(!!v_treatment) == 0, fold__ == "test") %>%
     dplyr::mutate(risk_bin = dplyr::ntile(resp_ctl__, 10)) %>%
     dplyr::group_by(risk_bin, !!v_group) %>%
     dplyr::summarize(N = n(),
@@ -105,7 +105,7 @@ plot.policy <- function(x, nbins = 10, ...) {
     dplyr::mutate(type = "Outcome given control")
 
   calib_trt_pd <- x$data %>%
-    dplyr::filter(!!v_treatment == 1) %>%
+    dplyr::filter(as.numeric(!!v_treatment) == 1, fold__ == "test") %>%
     dplyr::mutate(risk_bin = dplyr::ntile(resp_trt__, 10)) %>%
     dplyr::group_by(risk_bin, !!v_group) %>%
     dplyr::summarize(N = n(),
