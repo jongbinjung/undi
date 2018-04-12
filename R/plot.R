@@ -118,7 +118,7 @@ plot.policy <- function(x, nbins = 10, ...) {
   p_calib <- ggplot(calib_pd, aes(x = mresp, y = pout)) +
     geom_abline(intercept = 0, slope = 1, size = 2,
                 color = theme_get()$panel.grid.minor$colour) +
-    geom_point(aes(size = N, color = x)) +
+    geom_point(aes_string(size = "N", color = x$grouping)) +
     scale_size_area() +
     scale_x_continuous("\nEstimated risk", labels = scales::percent) +
     scale_y_continuous("Proportion of outcome = 1\n", labels = scales::percent) +
@@ -129,4 +129,6 @@ plot.policy <- function(x, nbins = 10, ...) {
     risk_v_trt = p_risk_v_trt,
     calibration = p_calib
   )
+
+  ret
 }
