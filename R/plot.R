@@ -39,14 +39,17 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
       pd$controls <- forcats::fct_inorder(pd$controls)
     } else {
       warning(paste("include_benchmark = TRUE;",
-                    "but benchmark results not computed in optimsens object\n",
-                    "rerun optimsens() with include_benchmark = TRUE if",
+                    "but benchmark results not computed in", class(x)[1],
+                    "object\n",
+                    "rerun", class(x)[1], "with include_benchmark = TRUE if",
                     "you want to plot benchmark results"))
       include_benchmark <- FALSE
     }
   }
 
   p <- ggplot(pd, aes(x = term, y = odds_ratio)) +
+    geom_hline(yintercept = 1, size = 2,
+               color = ggplot2::theme_get()$panel.grid.minor$colour) +
     geom_errorbar(aes(ymin = cilb, ymax = ciub), size = .5, width = .2,
                 alpha = .4) +
     geom_linerange(aes(ymin = lb, ymax = ub), size = 4) +
