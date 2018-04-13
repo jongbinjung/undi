@@ -5,6 +5,7 @@
 #'
 #' @docType package
 #' @name undi
+#' @import rnr
 #' @import ggplot2
 #' @importFrom dplyr %>%
 #' @importFrom dplyr n
