@@ -37,6 +37,8 @@ if(getRversion() >= "2.15.1")
       "N",
       "mresp",
       "pout",
+      "fold__",
+      "weights__",
       "resp_ctl__",
       "resp_trt__",
       "group",
