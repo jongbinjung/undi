@@ -168,9 +168,10 @@ inv_logit <- stats::binomial()$linkinv
 #' @param n parameter for down-sampling; if between 0 and 1, treated as a
 #'   fraction, if larger than 1, rounded and treated as the number of rows to
 #'   sample
+#' @param verbose whether to print down-sampling message
 #'
 #' @return down-sampled data frame
-.down_sample <- function(d, n) {
+.down_sample <- function(d, n, verbose = TRUE) {
   N <- nrow(d)
 
   if (n == 1) {
@@ -187,8 +188,10 @@ inv_logit <- stats::binomial()$linkinv
     ret <- dplyr::sample_n(d, size = n)
   }
 
-  message("Down-sampled data to ", nrow(ret), "/", N,
-          " (", format(nrow(ret)/N * 100), "%) rows")
+  if (verbose) {
+    message("Down-sampled data to ", nrow(ret), "/", N,
+            " (", format(nrow(ret)/N * 100), "%) rows")
+  }
 
   return(ret)
 }
@@ -203,9 +206,9 @@ inv_logit <- stats::binomial()$linkinv
 
   means = colMeans(x, na.rm = T)
   sds = apply(x, 2, function(c) stats::sd(c, na.rm = T))
-  
+
   badcols = sds < .Machine$double.eps*2
-  
+
   # Don't scale constant columns
   sds[badcols] = 1
   means[badcols] = 0

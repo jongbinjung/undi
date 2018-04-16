@@ -235,7 +235,9 @@ sensitize.policy <-
     stop("Expected object of class policy")
   }
 
+  # Pull out data, and tag with internal ID for future consistency (e.g., plots)
   d <- obj$data
+  d$id_sens__ <- 1:nrow(d)
 
   # Filter and refactor data by grouping variable, as necessary
   if (!is.null(compare)) {

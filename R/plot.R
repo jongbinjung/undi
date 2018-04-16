@@ -68,7 +68,7 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
 }
 
 
-#' Plot min/max sensitivity results for a policy from a \code{sens} object
+#' Plot risk-treatment and calibration plots for a \code{policy}
 #'
 #' @param x object of class \code{policy}
 #' @param nbins number of bins to use (e.g., for calibration plots)
@@ -77,9 +77,10 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
 #' @return a named list of ggplot object
 #' @export
 plot.policy <- function(x, nbins = 10, ...) {
+  s_treatment <- x$treatment
   v_outcome <- rlang::sym(x$outcome)
   v_group <- rlang::sym(x$grouping)
-  v_treatment <- rlang::sym(x$treatment)
+  v_treatment <- rlang::sym(s_treatment)
   v_riskcol <- rlang::sym(x$risk_col)
 
   # Risk vs. treatment
@@ -102,7 +103,7 @@ plot.policy <- function(x, nbins = 10, ...) {
     dplyr::summarize(N = n(),
                      pout = mean(!!v_outcome),
                      mresp = mean(resp_ctl__)) %>%
-    dplyr::mutate(type = sprintf("Outcome given %s = 0", x$treatment))
+    dplyr::mutate(type = sprintf("Outcome given %s = 0", s_treatment))
 
   calib_trt_pd <- x$data %>%
     dplyr::filter(as.numeric(!!v_treatment) == 1, fold__ == "test") %>%
@@ -111,7 +112,7 @@ plot.policy <- function(x, nbins = 10, ...) {
     dplyr::summarize(N = n(),
                      pout = mean(!!v_outcome),
                      mresp = mean(resp_trt__)) %>%
-    dplyr::mutate(type = sprintf("Outcome given %s = 1", x$treatment))
+    dplyr::mutate(type = sprintf("Outcome given %s = 1", s_treatment))
 
   calib_pd <- dplyr::bind_rows(calib_ctl_pd, calib_trt_pd)
 
@@ -131,6 +132,67 @@ plot.policy <- function(x, nbins = 10, ...) {
     risk_v_trt = p_risk_v_trt,
     calibration = p_calib
   )
+
+  ret
+}
+
+
+#' Plot changes in risk-treatment for a \code{sensitive_policy}
+#'
+#' @param x object of class \code{sensitive_policy}
+#' @param down_sample (Optional) proportion (between 0 and 1) or number (greater
+#'   than 1) of rows to sample from each group, if down sampling the data;
+#'   default is 30
+#' @param ... ignored; included for S3 generic/method consistency
+#'
+#' @return a ggplot object
+#' @export
+plot.sensitive_policy <- function(x, down_sample = 30, ...) {
+  s_treatment <- x$treatment
+  v_outcome <- rlang::sym(x$outcome)
+  v_group <- rlang::sym(x$grouping)
+  v_treatment <- rlang::sym(s_treatment)
+  v_riskcol <- rlang::sym(x$risk_col)
+
+  vanilla_df <- .down_sample(x$data %>% group_by(!!v_group),
+                             down_sample,
+                             verbose = FALSE)
+
+  caption <- paste0("Down-sampled data to ", nrow(vanilla_df), "/",
+                    nrow(x$data), " rows (",
+                    format(nrow(vanilla_df)/nrow(x$data) * 100), "%)")
+
+  sampled_ids <- vanilla_df$id_sens__
+
+  sens_df <- x$sens_data %>%
+    dplyr::filter(id_sens__ %in% sampled_ids)
+
+  pd <- rbind(x$data %>%
+                select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                       !!x$grouping, ptrt__) %>%
+                dplyr::mutate(weights__ = 1, type = "original"),
+              x$sens_data %>%
+                select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                       !!x$grouping, ptrt__, weights__) %>%
+                dplyr::mutate(type = "sensitized"))
+
+  # Risk vs. treatment
+  ret <-
+    ggplot(data = vanilla_df, aes_string(
+      x = paste0(x$risk_col, "__"),
+      y = "ptrt__",
+      color = x$grouping
+    )) +
+    geom_point(aes(shape = "Original")) +
+    geom_point(data = sens_df, aes(shape = "Sensitized")) +
+    scale_shape_manual("Type",
+                       limits = c("Original", "Sensitized"),
+                       values = c(1, 19)) +
+    scale_x_continuous(paste0("\nEstimated risk (", x$risk_col, ")"),
+                       labels = scales::percent) +
+    scale_y_continuous("Estimated probability of treatment\n",
+                       labels = scales::percent) +
+    labs(caption = caption)
 
   ret
 }
