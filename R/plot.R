@@ -192,8 +192,9 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
                 aes(weight = weights__, linetype = type)) +
     geom_point(aes(shape = type, size = weights__)) +
     geom_point(data = sens_df, aes(shape = type, size = weights__)) +
-    geom_line(data = sens_df, aes(group = id_sens__), size = 1) +
-    scale_size_area() +
+    geom_line(data = sens_df, aes(group = id_sens__),
+              size = .2, linetype = "dashed", alpha = .3) +
+    scale_size_area(max_size = 3) +
     scale_linetype_manual("Type",
                           limits = c("Original", "Sensitized"),
                           values = c("dotted", "solid")) +
