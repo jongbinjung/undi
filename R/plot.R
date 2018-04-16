@@ -156,38 +156,52 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
 
   vanilla_df <- .down_sample(x$data %>% dplyr::group_by(!!v_group),
                              down_sample,
-                             verbose = FALSE)
+                             verbose = FALSE) %>%
+    dplyr::mutate(weights__ = 1, type = "Original")
 
-  caption <- paste0("Down-sampled data to ", nrow(vanilla_df), "/",
+  caption <- paste0("Points are down-sampled to ", nrow(vanilla_df), "/",
                     nrow(x$data), " rows (",
                     format(nrow(vanilla_df)/nrow(x$data) * 100), "%)")
 
   sampled_ids <- vanilla_df$id_sens__
 
   sens_df <- x$sens_data %>%
-    dplyr::filter(id_sens__ %in% sampled_ids)
+    dplyr::filter(id_sens__ %in% sampled_ids) %>%
+    dplyr::mutate(type = "Sensitized")
 
   pd <- rbind(x$data %>%
                 dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
                               !!x$grouping, ptrt__) %>%
-                dplyr::mutate(weights__ = 1, type = "original"),
+                dplyr::mutate(weights__ = 1, type = "Original"),
               x$sens_data %>%
                 dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
                               !!x$grouping, ptrt__, weights__) %>%
-                dplyr::mutate(type = "sensitized"))
+                dplyr::mutate(type = "Sensitized"))
 
   # Risk vs. treatment
   ret <-
     ggplot(data = vanilla_df, aes_string(
       x = paste0(x$risk_col, "__"),
       y = "ptrt__",
+      alpha = "type",
       color = x$grouping
     )) +
-    geom_point(aes(shape = "Original")) +
-    geom_point(data = sens_df, aes(shape = "Sensitized")) +
+    geom_smooth(formula = y ~ x, data = pd, se = FALSE, method = "glm",
+                method.args = list(family = "quasibinomial"),
+                aes(weight = weights__, linetype = type)) +
+    geom_point(aes(shape = type, size = weights__)) +
+    geom_point(data = sens_df, aes(shape = type, size = weights__)) +
+    geom_line(data = sens_df, aes(group = id_sens__), size = 1) +
+    scale_size_area() +
+    scale_linetype_manual("Type",
+                          limits = c("Original", "Sensitized"),
+                          values = c("dotted", "solid")) +
     scale_shape_manual("Type",
                        limits = c("Original", "Sensitized"),
                        values = c(1, 19)) +
+    scale_alpha_manual("Type",
+                       limits = c("Original", "Sensitized"),
+                       values = c(.4, .8)) +
     scale_x_continuous(paste0("\nEstimated risk (", x$risk_col, ")"),
                        labels = scales::percent) +
     scale_y_continuous("Estimated probability of treatment\n",

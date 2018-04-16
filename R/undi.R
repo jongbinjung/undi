@@ -47,6 +47,7 @@ if(getRversion() >= "2.15.1")
       "sgn",
       "bound",
       "tag",
+      "type",
       "ip",
       "optim",
       "term",
