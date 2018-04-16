@@ -157,7 +157,8 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
   vanilla_df <- .down_sample(x$data %>% dplyr::group_by(!!v_group),
                              down_sample,
                              verbose = FALSE) %>%
-    dplyr::mutate(weights__ = 1, type = "Original")
+    dplyr::mutate(weights__ = 1, type = "Original",
+                  !!v_treatment := ptrt__)
 
   caption <- paste0("Points are down-sampled to ", nrow(vanilla_df), "/",
                     nrow(x$data), " rows (",
@@ -183,7 +184,7 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
     ggplot(data = vanilla_df, aes_string(
       x = "risk__",
       # x = paste0(x$risk_col, "__"),
-      y = "ptrt__",
+      y = x$treatment,
       alpha = "type",
       color = x$grouping
     )) +
