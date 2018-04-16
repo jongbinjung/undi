@@ -40,6 +40,7 @@ if(getRversion() >= "2.15.1")
       "id_sens__",
       "fold__",
       "ptrt__",
+      "risk__",
       "weights__",
       "resp_ctl__",
       "resp_trt__",

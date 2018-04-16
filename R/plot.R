@@ -171,17 +171,18 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
 
   pd <- rbind(x$data %>%
                 dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
-                              !!x$grouping, ptrt__) %>%
+                              !!x$grouping, risk__, ptrt__) %>%
                 dplyr::mutate(weights__ = 1, type = "Original"),
               x$sens_data %>%
                 dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
-                              !!x$grouping, ptrt__, weights__) %>%
+                              !!x$grouping, risk__, ptrt__, weights__) %>%
                 dplyr::mutate(type = "Sensitized"))
 
   # Risk vs. treatment
   ret <-
     ggplot(data = vanilla_df, aes_string(
-      x = paste0(x$risk_col, "__"),
+      x = "risk__",
+      # x = paste0(x$risk_col, "__"),
       y = "ptrt__",
       alpha = "type",
       color = x$grouping
@@ -202,8 +203,7 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
     scale_alpha_manual("Type",
                        limits = c("Original", "Sensitized"),
                        values = c(.4, .8)) +
-    scale_x_continuous(paste0("\nEstimated risk (", x$risk_col, ")"),
-                       labels = scales::percent) +
+    scale_x_continuous(paste0("\nEstimated risk (", x$risk_col, ")")) +
     scale_y_continuous("Estimated probability of treatment\n",
                        labels = scales::percent) +
     labs(caption = caption)
