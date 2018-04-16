@@ -5,7 +5,9 @@ Version: 0.0.0.9000
 Authors@R: person("Jongbin", "Jung", email = "me@jongbin.com", role = c("aut", "cre"))
 Description: Test for unjustified disparate impact given decision,
     outcome, and covariates.
-Depends: R (>= 3.4.0)
+Depends: 
+    R (>= 3.4.0),
+    rnr (>= 0.2.1)
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -31,8 +33,6 @@ Imports:
     sgd,
     stats,
     tidyr
-Depends:
-    rnr
 Remotes: 
     jongbinjung/rnr,
     samcorbettdavies/sgd
