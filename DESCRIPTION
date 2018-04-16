@@ -26,12 +26,13 @@ Imports:
     lazyeval,
     purrr,
     rlang,
-    rnr,
     ROCR,
     scales,
     sgd,
     stats,
     tidyr
+Depends:
+    rnr
 Remotes: 
     jongbinjung/rnr,
     samcorbettdavies/sgd
