@@ -154,7 +154,7 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
   v_treatment <- rlang::sym(s_treatment)
   v_riskcol <- rlang::sym(x$risk_col)
 
-  vanilla_df <- .down_sample(x$data %>% group_by(!!v_group),
+  vanilla_df <- .down_sample(x$data %>% dplyr::group_by(!!v_group),
                              down_sample,
                              verbose = FALSE)
 
@@ -168,12 +168,12 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
     dplyr::filter(id_sens__ %in% sampled_ids)
 
   pd <- rbind(x$data %>%
-                select(!!x$treatment, !!paste0(x$risk_col, "__"),
-                       !!x$grouping, ptrt__) %>%
+                dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                              !!x$grouping, ptrt__) %>%
                 dplyr::mutate(weights__ = 1, type = "original"),
               x$sens_data %>%
-                select(!!x$treatment, !!paste0(x$risk_col, "__"),
-                       !!x$grouping, ptrt__, weights__) %>%
+                dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                              !!x$grouping, ptrt__, weights__) %>%
                 dplyr::mutate(type = "sensitized"))
 
   # Risk vs. treatment

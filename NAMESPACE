@@ -2,6 +2,7 @@
 
 S3method(plot,policy)
 S3method(plot,sens)
+S3method(plot,sensitive_policy)
 S3method(print,policy)
 S3method(print,sens)
 S3method(sensitize,policy)

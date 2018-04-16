@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{plot.policy}
 \alias{plot.policy}
-\title{Plot min/max sensitivity results for a policy from a \code{sens} object}
+\title{Plot risk-treatment and calibration plots for a \code{policy}}
 \usage{
 \method{plot}{policy}(x, nbins = 10, ...)
 }
@@ -17,5 +17,5 @@
 a named list of ggplot object
 }
 \description{
-Plot min/max sensitivity results for a policy from a \code{sens} object
+Plot risk-treatment and calibration plots for a \code{policy}
 }
