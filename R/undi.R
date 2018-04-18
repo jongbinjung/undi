@@ -53,6 +53,7 @@ if(getRversion() >= "2.15.1")
       "optim",
       "term",
       "estimate",
+      "controls",
       "lb",
       "ub",
       "cilb",

@@ -12,19 +12,20 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
   rad_ctls <- unique(x$results$controls)
   sens_pd <- x$results %>%
     dplyr::group_by(term) %>%
-    dplyr::mutate(ciub = estimate + 2 * std.error.naive,
-                  cilb = estimate - 2 * std.error.naive) %>%
+    dplyr::mutate(odds_ratio = exp(estimate),
+                  ciub = exp(estimate + 2 * std.error.naive),
+                  cilb = exp(estimate - 2 * std.error.naive)) %>%
     dplyr::summarize(
-      ub = exp(max(estimate)),
-      lb = exp(min(estimate)),
-      ciub = exp(max(ciub)),
-      cilb = exp(min(cilb))
+      ub = max(odds_ratio),
+      lb = min(odds_ratio),
+      ciub = max(ciub),
+      cilb = min(cilb)
     )
 
-  base_pd <- x$base_case[x$base_case$controls %in% rad_ctls, ]
-  base_pd$odds_ratio <- exp(base_pd$estimate)
-  base_pd <- base_pd %>%
-    dplyr::mutate(base_ciub = exp(estimate + 2 * std.error.naive),
+  base_pd <- x$base_case %>%
+    dplyr::filter(controls %in% rad_ctls) %>%
+    dplyr::mutate(odds_ratio = exp(estimate),
+                  base_ciub = exp(estimate + 2 * std.error.naive),
                   base_cilb = exp(estimate - 2 * std.error.naive))
 
   pd <- merge(base_pd, sens_pd, by = "term")
@@ -33,9 +34,9 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
     if ("bm" %in% x$base_case$method) {
       bm_pd <- x$base_case[!(x$base_case$controls %in% rad_ctls), ]
       bm_pd <- bm_pd %>%
-        dplyr::mutate(base_ciub = exp(estimate + 2 * std.error),
+        dplyr::mutate(odds_ratio = exp(estimate),
+                      base_ciub = exp(estimate + 2 * std.error),
                       base_cilb = exp(estimate - 2 * std.error))
-      bm_pd$odds_ratio <- exp(bm_pd$estimate)
 
       pd <- dplyr::bind_rows(bm_pd, pd)
 
