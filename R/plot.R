@@ -23,6 +23,9 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
 
   base_pd <- x$base_case[x$base_case$controls %in% rad_ctls, ]
   base_pd$odds_ratio <- exp(base_pd$estimate)
+  base_pd <- base_pd %>%
+    dplyr::mutate(base_ciub = exp(estimate + 2 * std.error.naive),
+                  base_cilb = exp(estimate - 2 * std.error.naive))
 
   pd <- merge(base_pd, sens_pd, by = "term")
 
@@ -30,8 +33,8 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
     if ("bm" %in% x$base_case$method) {
       bm_pd <- x$base_case[!(x$base_case$controls %in% rad_ctls), ]
       bm_pd <- bm_pd %>%
-        dplyr::mutate(ciub = exp(estimate + 2 * std.error),
-                      cilb = exp(estimate - 2 * std.error))
+        dplyr::mutate(base_ciub = exp(estimate + 2 * std.error),
+                      base_cilb = exp(estimate - 2 * std.error))
       bm_pd$odds_ratio <- exp(bm_pd$estimate)
 
       pd <- dplyr::bind_rows(bm_pd, pd)
@@ -53,7 +56,7 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
     geom_errorbar(aes(ymin = cilb, ymax = ciub), size = .5, width = .2,
                 alpha = .4) +
     geom_linerange(aes(ymin = lb, ymax = ub), size = 4) +
-    geom_errorbar(aes(ymin = cilb, ymax = ciub),
+    geom_errorbar(aes(ymin = base_cilb, ymax = base_ciub),
                   size = .8, width = 0, alpha = .6) +
     geom_point(color = "black", fill = "white", size = 3, shape = 21) +
     scale_y_continuous(sprintf("Odds of treatment (v. %s)\n", x$base_group)) +
