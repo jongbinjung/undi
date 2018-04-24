@@ -4,7 +4,7 @@
 \alias{plot.sensitive_policy}
 \title{Plot changes in risk-treatment for a \code{sensitive_policy}}
 \usage{
-\method{plot}{sensitive_policy}(x, down_sample = 30, ...)
+plot.sensitive_policy(x, down_sample = 30, ...)
 }
 \arguments{
 \item{x}{object of class \code{sensitive_policy}}
