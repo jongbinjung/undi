@@ -285,6 +285,10 @@ optimsens <-
 #'   0 and u = 1
 #' @param d1s values to search for change in log-odds of response = 1 if treat =
 #'   1 and u = 1
+#' @param params_grid (Optional) data frame with columns
+#'   \code{qb, qm, ab, am, d0b, d0m, d1b, d1m} indicating the parameter combinations
+#'   to be searched over. If specified, the parameter range argments (\code{qs} through \code{d1s})
+#'   are ignored.
 #' @param base_group (Optional) single group that acts as the pivot/base; by
 #'   default, if the grouping variable is a factor, set to the first level,
 #'   otherwise set to the first of sorted unique values
@@ -317,6 +321,7 @@ gridsens <-
            dps = c(0, log(2)),
            d0s = c(0, log(2)),
            d1s = c(0, log(2)),
+           params_grid = NULL,
            base_group = NULL,
            minority_groups = NULL,
            allow_sgv = FALSE,
@@ -344,7 +349,29 @@ gridsens <-
                  pol$grouping))
   }
 
-  params_grid <- .get_params_grid(qs, dps, d0s, d1s, allow_sgv)
+  if (is.null(params_grid)) {
+    params_grid <- .get_params_grid(qs, dps, d0s, d1s, allow_sgv)
+  } else {
+    # Check params_grid for validity
+    if (is.null(params_grid$qb) ||
+        any((params_grid$qb < 0) | (params_grid$qb > 1)) ||
+        is.null(params_grid$qm) ||
+        any((params_grid$qm < 0) | (params_grid$qm > 1)) ||
+        is.null(params_grid$ab) ||
+        any(params_grid$ab < 0) ||
+        is.null(params_grid$am) ||
+        any(params_grid$am < 0) ||
+        is.null(params_grid$d0b) ||
+        any(params_grid$d0b < 0) ||
+        is.null(params_grid$d0m) ||
+        any(params_grid$d0m < 0) ||
+        is.null(params_grid$d1b) ||
+        any(params_grid$d1b < 0) ||
+        is.null(params_grid$d1m) ||
+        any(params_grid$d1m < 0)) {
+      stop('params_grid is misspecified')
+    }
+  }
 
   if (is.null(base_group)) {
     if (is.factor(group_col)) {
