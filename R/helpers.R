@@ -5,6 +5,76 @@
 logit <- stats::binomial()$linkfun
 inv_logit <- stats::binomial()$linkinv
 
+
+#' Overwrites a list with named arguments
+#' 
+#' Returns a list that is the intersection of
+#' \code{defaults} and \code{...} where named
+#' values in \code{...} overwrite values in \code{defaults}.
+#' 
+#' One or more of the elements in \code{...} can be a
+#' \code{pairlist} (the structure in which dotted arguments
+#' are stored) and this list will get expanded and substituted
+#' into \code{defaults} too. This means that the same named argument
+#' could be listed more than twice, in which case the right-most value
+#' is used. See below for details.
+#' 
+#' @param defaults list of default values.
+#'   Argument always be specified by name not position
+#' @param ... a comma separated set of named 
+#' 
+#' \code{overwrite_list(defaults = list(a = 1, b = '2'), c = 1, a = '3')} will
+#' return list(a = '1', b = '2', c = 1)
+#' 
+#' To demonstrate the operation when one of the arguments is a \code{pairlist},
+#' note that both of the functions below produce the same result. You can either pass the
+#' elipsis (...) directly, or you can extract the arguments from the \code{call}
+#' and pass them later.
+#' 
+#' \code{
+#'   f = function(...) {
+#'     overwrite_list(defaults = list(a = 1, b = 'b'), b = 2, ...)
+#'   }
+#' }
+#' 
+#' \code{
+#'   f = function(...) {
+#'     # Extract passed arguments from call
+#'     dot_args = match.call(expand.dots = F)$...
+#'     overwrite_list(defaults = list(a = 1, b = 'b'), b = 2, dot_args)
+#'   }
+#' }
+#' 
+#' \code{f(k = 5)} will return \code{list(a = 1, b = 2, k = 5)}.
+#' 
+#' \code{f(b = 10)} will return \code{list(a = 1, b = 10)}. Note
+#' how the named argument \code{b} appears 3 times in the \code{overwrite_list}
+#' call; once in the defaults, once explicitly specified for overwriting (\code{b = 2}),
+#' and once indirectly specified via the arguments to \code{f} (\code{b = 10}).
+#' 
+#' @export
+overwrite_list <- function(defaults, ...) {
+  
+  dot_args <- list(...)
+  
+  
+  # Expand pairlists (ie lists of arguments)
+  dot_args = 
+    lapply(seq_along(dot_args), function(i) {
+      if (is.pairlist(dot_args[[i]])) {
+        do.call(c,dot_args[i])
+      } else {
+        dot_args[i]
+      }}) %>% 
+    unlist(recursive = F)
+  
+  for (v in seq_along(dot_args)) {
+    defaults[[names(dot_args)[v]]] <- dot_args[[v]]
+  }
+  defaults
+}
+
+
 #' Given a policy object, compute and return the appropriate risk column
 .get_risk_col <- function(pol) {
   # Input validation

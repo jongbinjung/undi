@@ -190,7 +190,8 @@ policy <-
                 fit2 = fit2,
                 m_resp_ctl = NULL,
                 m_resp_trt = NULL,
-                m_ptrt = NULL)
+                m_ptrt = NULL,
+                call = match.call(expand.dots = F))
     class(ret) <- c("policy", class(ret))
 
     # Add policy estimates
@@ -208,33 +209,52 @@ policy <-
 #' (Re)Estimate treatment and response surface models for a policy
 #'
 #' @param pol a policy object
-#' @param ptreat (Optional) default value for probability of treatment; if
-#'   provided, it will override \code{fit_ptreat} and \code{pred_ptreat}
-#' @param resp_ctl (Optional)
-#' @param resp_trt (Optional) default value for probability of response = 1
-#'   given each treatment regime (\code{ctl}, \code{trt}); useful for cases
-#'   where outcome under certain treatment regimes is deterministic (e.g.,
-#'   probability of finding illegal weapon if NOT frisked is 0)
-#' @param calibrate whether or not to use platt scaling to calibrate predictions
-#'   (default: FALSE)
 #' @param features (Optional) character vector of features to use; if
 #'   \code{NULL}, \code{pol$features} is used
-#' @param save_models whether or not fitted models should be returned
-#' @param ... additional arguments passed to model fitting functions \code{fit1}
-#'   and \code{fit_ptreat}
+#' @param ... additional arguments  passed to model fitting functions \code{fit1}
+#'   and \code{fit_ptreat}. See \code{\link{policy}}
 #'
 #' @return object of class \code{policy} where the relative columns in
 #'   \code{$data} are updated with new predictions
 #'
 #' @export
-estimate_policy <- function(pol,
-                            ptreat = NULL,
-                            resp_ctl = NULL,
-                            resp_trt = NULL,
-                            calibrate = FALSE,
-                            features = NULL,
-                            save_models = FALSE,
-                            ...) {
+estimate_policy <- function(pol, features = NULL, ...) {
+  
+  opt_args = list(
+      ptreat = NULL,
+      resp_ctl = NULL,
+      resp_trt = NULL,
+      calibrate = FALSE,
+      features = NULL,
+      save_models = FALSE
+  )
+  
+  if (is.null(pol$call)) {
+    # If the policy object does not have a call field, use the defaults above
+    # unless an argument to estimate_policy specifies different values
+    opt_args = overwrite_list(defaults = opt_args, ...)
+    
+    fit_args = list(...)
+  } else {
+    # Otherwise, use the values specified in the initial call to policy()
+    # unless an argument to estimate_policy specifies different values
+    opt_args = overwrite_list(
+      defaults = opt_args,
+      ptreat = pol$call$ptreat,
+      resp_ctl = pol$call$resp_ctl,
+      resp_trt = pol$call$resp_trt,
+      calibrate = pol$call$calibrate,
+      save_models = pol$call$save_models,
+      ...
+    )
+    
+    fit_args = overwrite_list(
+      defaults = list(),
+      pol$call$...,
+      ...
+    )
+  }
+  
     # Input validation
     if (!("policy" %in% class(pol))) {
       stop("Expected object of class policy")
@@ -255,12 +275,12 @@ estimate_policy <- function(pol,
     trt_formula <- .make_formula(pol$treatment, c(pol$grouping, pol$features))
 
     # Fit first-stage models
-    if (is.null(resp_trt)) {
-      m1_trt <- pol$fit1(out_formula, d[trt_train_ind, ], ...)
+    if (is.null(opt_args$resp_trt)) {
+      m1_trt <- do.call(pol$fit1, c(list(out_formula, d[trt_train_ind, ]), fit_args))
 
       d$resp_trt_pre_calib__ <- pol$pred1(m1_trt, d, out_formula)
 
-      if (calibrate) {
+      if (opt_args$calibrate) {
         calib_formula <- .make_formula(pol$outcome, c("resp_trt_pre_calib__", pol$grouping))
 
         d$resp_trt__ <-
@@ -272,20 +292,20 @@ estimate_policy <- function(pol,
       } else {
         d$resp_trt__ <- d$resp_trt_pre_calib__
       }
-    } else if (length(resp_trt) == nrow(d) | length(resp_trt) == 1) {
+    } else if (length(opt_args$resp_trt) == nrow(d) | length(opt_args$resp_trt) == 1) {
       message("Using custom values provided for resp_trt")
       m1_trt <- "Custom values of resp_trt provided"
-      d$resp_trt__ <- resp_trt
+      d$resp_trt__ <- opt_args$resp_trt
     } else {
       stop("Bad specification of argument: resp_trt")
     }
 
-    if (is.null(resp_ctl)) {
-      m1_ctl <- pol$fit1(out_formula, d[ctl_train_ind, ], ...)
+    if (is.null(opt_args$resp_ctl)) {
+      m1_ctl <- do.call(pol$fit1, c(list(out_formula, d[ctl_train_ind, ]), fit_args))
 
       d$resp_ctl_pre_calib__ <- pol$pred1(m1_ctl, d, out_formula)
 
-      if (calibrate) {
+      if (opt_args$calibrate) {
         calib_formula <- .make_formula(pol$outcome, "resp_ctl_pre_calib__")
 
         d$resp_ctl__ <-
@@ -297,20 +317,20 @@ estimate_policy <- function(pol,
       } else {
         d$resp_ctl__ <- d$resp_ctl_pre_calib__
       }
-    } else if (length(resp_ctl) == nrow(d) | length(resp_ctl) == 1) {
+    } else if (length(opt_args$resp_ctl) == nrow(d) | length(opt_args$resp_ctl) == 1) {
       message("Using custom values provided for resp_ctl")
       m1_ctl <- "Custom values of resp_ctl provided"
-      d$resp_ctl__ <- resp_ctl
+      d$resp_ctl__ <- opt_args$resp_ctl
     } else {
       stop("Bad specification of argument: resp_ctl")
     }
 
-    if (is.null(ptreat)) {
-      m_ptrt <- pol$fit_ptreat(trt_formula, d[train_ind, ], ...)
+    if (is.null(opt_args$ptreat)) {
+      m_ptrt <- do.call(pol$fit_ptreat, c(list(trt_formula, d[train_ind, ]), fit_args))
 
       d$ptrt_pre_calib__ <- pol$pred_ptreat(m_ptrt, d, trt_formula)
 
-      if (calibrate) {
+      if (opt_args$calibrate) {
         calib_formula <- .make_formula(pol$treatment, "ptrt_pre_calib__")
 
         d$ptrt__ <-
@@ -322,12 +342,12 @@ estimate_policy <- function(pol,
       } else {
         d$ptrt__ <- d$ptrt_pre_calib__
       }
-    } else if (length(ptreat) == nrow(d) | length(ptreat) == 1) {
+    } else if (length(opt_args$ptreat) == nrow(d) | length(opt_args$ptreat) == 1) {
       # TODO(jongbin): Provide warning for cases when fit/pred_ptreat is
       # specified but ignored
       message("Using custom values provided for ptreat")
       m_ptrt <- "Custom values of ptreat provided"
-      d$ptrt__ <- ptreat
+      d$ptrt__ <- opt_args$ptreat
     } else {
       stop("Bad specification of argument: ptreat")
     }
@@ -340,7 +360,7 @@ estimate_policy <- function(pol,
 
     pol$data$risk__ <- .get_risk_col(pol)
 
-    if (save_models) {
+    if (opt_args$save_models) {
       pol$m_ptrt <- m_ptrt
       pol$m_resp_ctl <- m1_ctl
       pol$m_resp_trt <- m1_trt
