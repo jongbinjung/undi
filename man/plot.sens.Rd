@@ -4,7 +4,7 @@
 \alias{plot.sens}
 \title{Plot min/max sensitivity results for a policy from a \code{sens} object}
 \usage{
-plot.sens(x, include_benchmark = TRUE, ...)
+\method{plot}{sens}(x, include_benchmark = TRUE, ...)
 }
 \arguments{
 \item{x}{object of class \code{sens}}
