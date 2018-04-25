@@ -5,9 +5,9 @@
 \title{Find parameter values that min/maximize sensitivity results via grid search}
 \usage{
 gridsens(pol, qs = c(0, 0.4, 0.5, 0.6, 1), dps = c(0, log(2)), d0s = c(0,
-  log(2)), d1s = c(0, log(2)), base_group = NULL, minority_groups = NULL,
-  allow_sgv = FALSE, controls = NULL, include_benchmark = FALSE,
-  verbose = TRUE)
+  log(2)), d1s = c(0, log(2)), params_grid = NULL, base_group = NULL,
+  minority_groups = NULL, allow_sgv = FALSE, controls = NULL,
+  include_benchmark = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -21,6 +21,11 @@ gridsens(pol, qs = c(0, 0.4, 0.5, 0.6, 1), dps = c(0, log(2)), d0s = c(0,
 
 \item{d1s}{values to search for change in log-odds of response = 1 if treat =
 1 and u = 1}
+
+\item{params_grid}{(Optional) data frame with columns
+\code{qb, qm, ab, am, d0b, d0m, d1b, d1m} indicating the parameter combinations
+to be searched over. If specified, the parameter range argments (\code{qs} through \code{d1s})
+are ignored.}
 
 \item{base_group}{(Optional) single group that acts as the pivot/base; by
 default, if the grouping variable is a factor, set to the first level,

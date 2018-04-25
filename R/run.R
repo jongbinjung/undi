@@ -210,6 +210,14 @@ policy <-
 #' @param pol a policy object
 #' @param features (Optional) character vector of features to use; if
 #'   \code{NULL}, \code{pol$features} is used
+#' @param ptreat (Optional) default value for probability of treatment;
+#' @param resp_ctl (Optional)
+#' @param resp_trt (Optional) default value for probability of response = 1
+#'   given each treatment regime (\code{ctl}, \code{trt}); useful for cases
+#'   where outcome under certain treatment regimes is deterministic (e.g.,
+#'   probability of finding illegal weapon if NOT frisked is 0)
+#' @param calibrate whether or not to use platt scaling to calibrate predictions
+#' @param save_models whether or not fitted models should be returned
 #' @param ... additional arguments  passed to model fitting functions \code{fit1}
 #'   and \code{fit_ptreat}. See \code{\link{policy}}
 #'
@@ -225,15 +233,15 @@ estimate_policy <- function(pol,
                             calibrate = pol$calibrate,
                             save_models = pol$save_models,
                             ...) {
-  
+
     # Input validation
     if (!("policy" %in% class(pol))) {
       stop("Expected object of class policy")
     }
 
-    # Get model fitting arguments from pol  
+    # Get model fitting arguments from pol
     fit_args = overwrite_list(defaults = list(), pol$call$..., ...)
-  
+
     d <- pol$data
 
     if (!is.null(features)) {

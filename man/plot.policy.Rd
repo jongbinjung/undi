@@ -4,7 +4,7 @@
 \alias{plot.policy}
 \title{Plot risk-treatment and calibration plots for a \code{policy}}
 \usage{
-plot.policy(x, nbins = 10, ...)
+\method{plot}{policy}(x, nbins = 10, ...)
 }
 \arguments{
 \item{x}{object of class \code{policy}}

@@ -4,13 +4,28 @@
 \alias{estimate_policy}
 \title{(Re)Estimate treatment and response surface models for a policy}
 \usage{
-estimate_policy(pol, features = NULL, ...)
+estimate_policy(pol, features = NULL, ptreat = pol$ptreat,
+  resp_ctl = pol$resp_ctl, resp_trt = pol$resp_trt,
+  calibrate = pol$calibrate, save_models = pol$save_models, ...)
 }
 \arguments{
 \item{pol}{a policy object}
 
 \item{features}{(Optional) character vector of features to use; if
 \code{NULL}, \code{pol$features} is used}
+
+\item{ptreat}{(Optional) default value for probability of treatment;}
+
+\item{resp_ctl}{(Optional)}
+
+\item{resp_trt}{(Optional) default value for probability of response = 1
+given each treatment regime (\code{ctl}, \code{trt}); useful for cases
+where outcome under certain treatment regimes is deterministic (e.g.,
+probability of finding illegal weapon if NOT frisked is 0)}
+
+\item{calibrate}{whether or not to use platt scaling to calibrate predictions}
+
+\item{save_models}{whether or not fitted models should be returned}
 
 \item{...}{additional arguments  passed to model fitting functions \code{fit1}
 and \code{fit_ptreat}. See \code{\link{policy}}}
