@@ -56,7 +56,7 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
                color = ggplot2::theme_get()$panel.grid.minor$colour) +
     geom_errorbar(aes(ymin = cilb, ymax = ciub), size = .5, width = .2,
                 alpha = .4, na.rm = include_benchmark) +
-    geom_linerange(aes(ymin = lb, ymax = ub, na.rm = include_benchmark),
+    geom_linerange(aes(ymin = lb, ymax = ub), na.rm = include_benchmark,
                    size = 4) +
     geom_errorbar(aes(ymin = base_cilb, ymax = base_ciub),
                   size = .8, width = 0, alpha = .6) +
