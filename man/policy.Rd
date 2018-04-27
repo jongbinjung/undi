@@ -6,10 +6,9 @@
 \usage{
 policy(formula, data, outcome, train = 0.5, risk = "resp_trt",
   model = names(models()), down_sample = 1, fit1 = NULL, pred1 = NULL,
-  fit2 = NULL, fit_ptreat = NULL, pred_ptreat = NULL, ptreat = NULL,
-  resp_ctl = NULL, resp_trt = NULL, calibrate = FALSE,
-  save_models = FALSE, recast_df = FALSE, seed = round(stats::runif(1) *
-  10000), ...)
+  fit_ptreat = NULL, pred_ptreat = NULL, ptreat = NULL, resp_ctl = NULL,
+  resp_trt = NULL, calibrate = FALSE, save_models = FALSE,
+  recast_df = FALSE, seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{
 \item{formula}{a formula in the form of \code{treatment ~ grouping_variable +
@@ -48,12 +47,6 @@ be ignored within the function body, but the function should still accept
 it; some prediction functions (e.g., glmnet) require the original formula;
 predictions should be on probability scale, while "risk" will always be on
 logit scale; overrides \code{model}}
-
-\item{fit2}{a function of the form f(formula, data, weights = NULL) used for
-fitting the second-stage model; using \code{glm} with \code{family =
-quasibinomial} by default; the \code{weights} argument is only used for
-sensitivity and *must* be initialized to \code{NULL} (or the equivalent of
-non-weighted fitting)}
 
 \item{fit_ptreat}{a function of the form f(formula, data, ...) used for
 fitting propensity (probability of treatment) models. If not specified,
@@ -99,7 +92,6 @@ policy object \item{data}{original data frame, augmented with columns
   used as grouping variable} \item{features}{additional features used in
   first stage model} \item{fit1}{function used to fit first stage model}
   \item{pred1}{function used to generate predictions from first stage model}
-  \item{fit2}{function used to fit second stage model}
   \item{fit_ptreat}{function used to fit model for treatment propensity}
   \item{pred_ptreat}{function used to generate predictions for treatment
   propensity}\item{m_*}{if \code{save_models = TRUE}, each of the fitted

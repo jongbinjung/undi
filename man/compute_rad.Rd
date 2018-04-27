@@ -5,8 +5,8 @@
 \title{Compute risk-adjusted disparate impact estimate for a policy}
 \usage{
 compute_rad(pol, controls = NULL, base_group = NULL,
-  minority_groups = NULL, down_sample = 1, seed = round(stats::runif(1) *
-  10000))
+  minority_groups = NULL, fit_fn = c("logit"), down_sample = 1,
+  seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{
 \item{pol}{object of class policy}
@@ -21,11 +21,16 @@ otherwise set to the first of sorted unique values}
 \item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
 
+\item{fit_fn}{string indicating the fitting proceedure used.}
+
 \item{down_sample}{(Optional) proportion (between 0 and 1) or number (greater
 than 1) of rows to sample, if down sampling the (test) data; default is 1
 (i.e., use all data)}
 
 \item{seed}{random seed to set}
+
+\item{...}{additional arguments to pass to \code{\link{di_models}} for
+fine-tuning}
 }
 \value{
 tidy data frame of rad coefficients

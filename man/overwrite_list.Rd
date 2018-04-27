@@ -10,7 +10,7 @@ overwrite_list(defaults, ...)
 \item{defaults}{list of default values.
 Argument always be specified by name not position}
 
-\item{...}{a comma separated set of named 
+\item{...}{a comma separated set of named
 
 \code{overwrite_list(defaults = list(a = 1, b = '2'), c = 1, a = '3')} will
 return list(a = '1', b = '2', c = 1)

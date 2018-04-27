@@ -7,36 +7,36 @@ inv_logit <- stats::binomial()$linkinv
 
 
 #' Overwrites a list with named arguments
-#' 
+#'
 #' Returns a list that is the intersection of
 #' \code{defaults} and \code{...} where named
 #' values in \code{...} overwrite values in \code{defaults}.
-#' 
+#'
 #' One or more of the elements in \code{...} can be a
 #' \code{pairlist} (the structure in which dotted arguments
 #' are stored) and this list will get expanded and substituted
 #' into \code{defaults} too. This means that the same named argument
 #' could be listed more than twice, in which case the right-most value
 #' is used. See below for details.
-#' 
+#'
 #' @param defaults list of default values.
 #'   Argument always be specified by name not position
-#' @param ... a comma separated set of named 
-#' 
+#' @param ... a comma separated set of named
+#'
 #' \code{overwrite_list(defaults = list(a = 1, b = '2'), c = 1, a = '3')} will
 #' return list(a = '1', b = '2', c = 1)
-#' 
+#'
 #' To demonstrate the operation when one of the arguments is a \code{pairlist},
 #' note that both of the functions below produce the same result. You can either pass the
 #' elipsis (...) directly, or you can extract the arguments from the \code{call}
 #' and pass them later.
-#' 
+#'
 #' \code{
 #'   f = function(...) {
 #'     overwrite_list(defaults = list(a = 1, b = 'b'), b = 2, ...)
 #'   }
 #' }
-#' 
+#'
 #' \code{
 #'   f = function(...) {
 #'     # Extract passed arguments from call
@@ -44,33 +44,32 @@ inv_logit <- stats::binomial()$linkinv
 #'     overwrite_list(defaults = list(a = 1, b = 'b'), b = 2, dot_args)
 #'   }
 #' }
-#' 
+#'
 #' \code{f(k = 5)} will return \code{list(a = 1, b = 2, k = 5)}.
-#' 
+#'
 #' \code{f(b = 10)} will return \code{list(a = 1, b = 10)}. Note
 #' how the named argument \code{b} appears 3 times in the \code{overwrite_list}
 #' call; once in the defaults, once explicitly specified for overwriting (\code{b = 2}),
 #' and once indirectly specified via the arguments to \code{f} (\code{b = 10}).
-#' 
+#'
 #' @export
 overwrite_list <- function(defaults, ...) {
-  
   dot_args <- list(...)
-  
-  
+
   # Expand pairlists (ie lists of arguments)
-  dot_args = 
+  dot_args =
     lapply(seq_along(dot_args), function(i) {
       if (is.pairlist(dot_args[[i]])) {
         do.call(c,dot_args[i])
       } else {
         dot_args[i]
-      }}) %>% 
+      }}) %>%
     unlist(recursive = F)
-  
+
   for (v in seq_along(dot_args)) {
     defaults[[names(dot_args)[v]]] <- dot_args[[v]]
   }
+
   defaults
 }
 
@@ -85,21 +84,23 @@ overwrite_list <- function(defaults, ...) {
   logit(pol$data[[paste0(pol$risk_col, "__")]])
 }
 
-#' Fit second stage model and extract coefficients
+#' Fit second stage model and extract disparate impact coefficient
 #'
-#' Get tidy coefficients for cn_lhs ~ cn_tgt + controls given a data frame and
-#' additional controls
+#' Given a data frame, treatment (cn_lhs), group (cn_tgt), additional controls
+#' (controls), and some function for predicting treatment given risk, group and
+#' additional controls, report the average odds ratio of treatment between
+#' groups. The first factor is treated as a baseline group to compare against.
 #'
 #' @param d data frame that has all columns referenced in cn_lhs, cn_tgt, and
 #'   controls
 #' @param cn_lhs name of column to use as LHS
-#' @param cn_tgt the target column of interest
+#' @param cn_tgt the target column of interest; should be a factor where the
+#'   first factor is considered the base group to compare against
 #' @param controls character vector of additional columns to control for
-#' @param fun function (formula, data, ...) used to fit model; must return a
-#'   model object that can be handled by broom::tidy() (default: glm)
+#' @param fun function(data, ...) used to fit model
 #'
 #' @return tidy dataframe of the glm model
-.pull_coefs <-
+.get_estimate <-
   function(d,
            cn_lhs,
            cn_tgt,
@@ -114,7 +115,8 @@ overwrite_list <- function(defaults, ...) {
   fun(f, d) %>%
     broom::tidy() %>%
     dplyr::mutate(controls = lbl_controls)
-}
+  }
+
 
 #' Extract LHS, first element of RHS, and remainder of RHS from a formula
 #'
@@ -284,4 +286,19 @@ overwrite_list <- function(defaults, ...) {
   means[badcols] = 0
 
   scale(x, center = means, scale = sds)
+}
+
+
+#' Extract group members from a column of groups
+#'
+#' @param group_col column of groups
+#'
+#' @return \code{levels(group_col)} if \code{group_col} is a factor, and
+#'   \code{unique(group_col)} otherwise
+.get_groups <- function(group_col) {
+  if (is.factor(group_col)) {
+    return(levels(group_col))
+  } else {
+    return(unique(group_col))
+  }
 }

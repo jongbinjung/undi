@@ -42,6 +42,52 @@ models <- function() {
   )
 }
 
+
+#' Get list of formula and functions to fit and predict treatment given risk,
+#' group, and controls
+#'
+#' @param pol a \code{\link{policy}} object
+#' @param controls character vector of additional controls to consider in the
+#'   second-stage model
+#' @param fit_fn string indicating the fitting proceedure used.
+#' @param ... other arguments passed to the \code{fit} function
+#'
+#' @return a list with model types (e.g., glm/gbm), each with the original
+#'   \code{formula}, and appropriate \code{$fit} and \code{$pred} functions
+#' @export
+di_models <- function(pol, controls = NULL, fit_fn = c("logit"), ...) {
+  fit_fn = match.arg(fit_fn)
+
+  if (fit_fn == "logit") {
+    f <- .make_formula(pol$treatment, c("risk__", pol$grouping, controls))
+
+    return(list(
+      formula = f,
+      fit = function(d, ...) {
+        stats::glm(
+          formula = f,
+          data = d,
+          family = stats::quasibinomial,
+          ...
+        )
+      },
+      pred = function(m, d) {
+        stats::predict.glm(object = m,
+                           newdata = d,
+                           type = "response")
+      }
+    ))
+  }
+
+  # Additional types to support should go here
+  # if (fit_fn == "gbm") {
+  #
+  # }
+
+  stop("Failed to construct disparate impact model functions\n\t(Unknown fit_fn?)")
+}
+
+
 #' Wrapper for fitting \code{\link[sgd]{sgd}} models with standardized design
 #' matrix
 #'
@@ -94,6 +140,7 @@ fit_glmnet <- function(f, d, ...) {
 
   return(m)
 }
+
 
 #' Wrapper to compute predictions from a model matrix
 #'
