@@ -59,7 +59,10 @@ di_model <- function(pol, controls = NULL, fit_fn = c("logit")) {
 
   if (fit_fn == "logit") {
     feats <- c(pol$grouping, "risk__", controls)
-    f <- .make_formula(pol$treatment, feats)
+
+    f <- .make_formula(pol$treatment,
+                       c(feats, paste0(pol$grouping, ":", "risk__")))
+
     label <- paste(feats, collapse = ", ")
 
     ret <- list(
