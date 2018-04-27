@@ -64,17 +64,19 @@ compute_rad <-
       minority_groups <- groups[-1]
     }
 
+    # Restrict data to groups of interest
+    target_group_ind <- d[[pol$grouping]] %in% c(base_group, minority_groups)
+    d <- d[target_group_ind, ]
+    d[[pol$grouping]] <- forcats::fct_drop(d[[pol$grouping]])
+
+    # Down-sample and filter to test fold
     test_df <- .down_sample(d[d$fold__ == "test", ], down_sample)
 
     # Make sure that the base_group is first level
     test_df[[pol$grouping]] <- forcats::fct_relevel(test_df[[pol$grouping]],
                                                     base_group)
 
-    ret <-
-      .compute_estimate(test_df,
-                        pol$grouping,
-                        dm,
-                        ...)
+    ret <- .compute_estimate(test_df, pol$grouping, dm, ...)
 
     return(ret)
   }
