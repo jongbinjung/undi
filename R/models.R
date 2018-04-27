@@ -50,33 +50,40 @@ models <- function() {
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
 #' @param fit_fn string indicating the fitting proceedure used.
-#' @param ... other arguments passed to the \code{fit} function
 #'
 #' @return a list with model types (e.g., glm/gbm), each with the original
 #'   \code{formula}, and appropriate \code{$fit} and \code{$pred} functions
 #' @export
-di_models <- function(pol, controls = NULL, fit_fn = c("logit"), ...) {
+di_model <- function(pol, controls = NULL, fit_fn = c("logit")) {
   fit_fn = match.arg(fit_fn)
 
   if (fit_fn == "logit") {
-    f <- .make_formula(pol$treatment, c("risk__", pol$grouping, controls))
+    feats <- c(pol$grouping, "risk__", controls)
+    f <- .make_formula(pol$treatment, feats)
+    label <- paste(feats, collapse = ", ")
 
-    return(list(
+    ret <- list(
       formula = f,
-      fit = function(d, ...) {
-        stats::glm(
-          formula = f,
-          data = d,
-          family = stats::quasibinomial,
-          ...
-        )
+      label = label,
+      fit = function(d, w = NULL, ...) {
+        if (is.null(w)) {
+          stats::glm(f, d, family = stats::quasibinomial, ...)
+        } else {
+          # Make sure that the weights exist in d at the time of call
+          d$w <- w
+          stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
+        }
       },
       pred = function(m, d) {
         stats::predict.glm(object = m,
                            newdata = d,
                            type = "response")
       }
-    ))
+    )
+
+    class(ret) <- c("di_model", class(ret))
+
+    return(ret)
   }
 
   # Additional types to support should go here

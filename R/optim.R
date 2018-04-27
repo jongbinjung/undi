@@ -26,8 +26,8 @@
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
-#' @param optim_fit string indicating the fitting proceedure used within
-#'   optimization. Options are "glm" (default) or "sgd"
+#' @param optim_fit string indicating the fitting proceedure used in
+#'   optimization
 #' @param optim_control list of control parameters passed to \code{optim}
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
@@ -61,7 +61,7 @@ optimsens <-
            range_q_ratio = NULL,
            allow_sgv = FALSE,
            controls = NULL,
-           optim_fit = 'glm',
+           optim_fit = c("logit"),
            optim_control = list(),
            include_benchmark = FALSE,
            verbose = TRUE,
@@ -70,6 +70,8 @@ optimsens <-
   if (!("policy" %in% class(pol))) {
     stop("Expected object of class policy")
   }
+
+  optim_fit <- match.arg(optim_fit)
 
   if (length(base_group) > 1) {
     stop("Specify a single base group.\n\tGot: ", base_group)
@@ -514,7 +516,6 @@ gridsens <-
 #'   FALSE by default, to avoid unnecessary computation, but should be computed
 #'   for final results once extreme values have been identified
 #' @param optim_fit string indicating the fitting proceedure used.
-#'   Options are "glm" (default) or "sgd"
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
 #'   only, 2 = everything)
 #' @param return_scalar logical, whether to return a single scalar values (TRUE)
@@ -532,19 +533,16 @@ gridsens <-
             q_range = FALSE,
             allow_sgv = FALSE,
             naive_se = FALSE,
-            optim_fit = 'glm',
+            optim_fit = c("logit"),
             verbose = TRUE,
             return_scalar = TRUE) {
-
-  if (!(optim_fit %in% c('glm', 'sgd'))) {
-    stop('Fitting function ', optim_fit, ' not supported')
-  }
-
   # Validate input
   if (length(compare) != 2) {
     stop("Can only get optim fn for comparison of two groups, got ",
          length(compare))
   }
+
+  optim_fit <- match.arg(optim_fit)
 
   if (is.null(free_params)) {
     free_params = rep(T, 8)

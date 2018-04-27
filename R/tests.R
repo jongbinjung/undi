@@ -13,8 +13,8 @@
 #'   than 1) of rows to sample, if down sampling the (test) data; default is 1
 #'   (i.e., use all data)
 #' @param seed random seed to set
-#' @param ... additional arguments to pass to \code{\link{di_models}} for
-#'   fine-tuning
+#' @param ... additional arguments to pass to \code{fit} function from
+#'   \code{\link{di_model}} for fine-tuning
 #'
 #' @return tidy data frame of rad coefficients
 #'
@@ -40,7 +40,7 @@ compute_rad <-
 
     fit_fn <- match.arg(fit_fn)
 
-    dm <- di_models(pol, controls, fit_fn = fit_fn, ...)
+    dm <- di_model(pol, controls, fit_fn = fit_fn)
 
     d <- pol$data
 
@@ -70,11 +70,11 @@ compute_rad <-
     test_df[[pol$grouping]] <- forcats::fct_relevel(test_df[[pol$grouping]],
                                                     base_group)
 
-    ret <- .compute_estimate(test_df, pol$grouping, fit = dm$fit, pred = dm$pred)
-
-    ret <- ret %>%
-      dplyr::mutate(controls = paste(c(pol$grouping, "risk__", controls),
-                                     collapse = ", "))
+    ret <-
+      .compute_estimate(test_df,
+                        pol$grouping,
+                        dm,
+                        ...)
 
     return(ret)
   }
@@ -261,16 +261,18 @@ compute_rad_old <-
 #'
 #' @param d data frame that has all necessary columns
 #' @param cn_group character string of grouping column name
-#' @param fit function(data) used to fit model
-#' @param pred function(model, data) used to generate predictions using the
-#'   resulting model from \code{fit}
+#' @param dm a \code{\link{di_model}} object
+#' @param alt_fit alternative \code{fit} function to use; \code{dm$fit} is used
+#'   if \code{NULL}; general purpose is to allow for weights
+#' @param ... additional arguments passed to \code{fit} function
 #'
 #' @return tidy dataframe of the glm model
 .compute_estimate <-
   function(d,
            cn_group,
-           fit,
-           pred) {
+           dm,
+           alt_fit = NULL,
+           ...) {
   # Fit model
   groups <- .get_groups(d[[cn_group]])
   base_group <- groups[1]
@@ -281,12 +283,16 @@ compute_rad_old <-
 
     tmp_df <- d[target_group_ind, ]
 
-    m <- fit(tmp_df)
+    if (is.null(alt_fit)) {
+      m <- dm$fit(tmp_df, ...)
+    } else{
+      m <- alt_fit(tmp_df)
+    }
 
     ptrt <- purrr::map_dbl(c(base_group, group), function(x) {
       counter_df <- tmp_df
       counter_df[[cn_group]] <- x
-      mean(pred(m, counter_df))
+      mean(dm$pred(m, counter_df))
     })
 
     odds <- ptrt / (1 - ptrt)
@@ -295,6 +301,7 @@ compute_rad_old <-
     # TODO: estimate standard errors? (just create column of 0 for now)
     dplyr::tibble(term = paste0(cn_group, group),
                   estimate = or,
-                  std.error = 0)
+                  std.error = 0,
+                  controls = dm$label)
   })
 }

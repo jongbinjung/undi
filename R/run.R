@@ -28,11 +28,6 @@
 #'   it; some prediction functions (e.g., glmnet) require the original formula;
 #'   predictions should be on probability scale, while "risk" will always be on
 #'   logit scale; overrides \code{model}
-#' @param fit2 a function of the form f(formula, data, weights = NULL) used for
-#'   fitting the second-stage model; using \code{glm} with \code{family =
-#'   quasibinomial} by default; the \code{weights} argument is only used for
-#'   sensitivity and *must* be initialized to \code{NULL} (or the equivalent of
-#'   non-weighted fitting)
 #' @param fit_ptreat a function of the form f(formula, data, ...) used for
 #'   fitting propensity (probability of treatment) models. If not specified,
 #'   \code{fit1} is used by default, with the provided \code{formula} argument.
@@ -67,7 +62,6 @@
 #'   used as grouping variable} \item{features}{additional features used in
 #'   first stage model} \item{fit1}{function used to fit first stage model}
 #'   \item{pred1}{function used to generate predictions from first stage model}
-#'   \item{fit2}{function used to fit second stage model}
 #'   \item{fit_ptreat}{function used to fit model for treatment propensity}
 #'   \item{pred_ptreat}{function used to generate predictions for treatment
 #'   propensity}\item{m_*}{if \code{save_models = TRUE}, each of the fitted
@@ -84,7 +78,6 @@ policy <-
            down_sample = 1,
            fit1 = NULL,
            pred1 = NULL,
-           fit2 = NULL,
            fit_ptreat = NULL,
            pred_ptreat = NULL,
            ptreat = NULL,
@@ -136,18 +129,6 @@ policy <-
       pred_ptreat <- pred1
     }
 
-    if (is.null(fit2)) {
-      fit2 <-
-        function(f, d, w = NULL) {
-          if (is.null(w)) {
-            stats::glm(f, d, family = stats::quasibinomial)
-          } else {
-            d$w <- w
-            stats::glm(f, d, weights = w, family = stats::quasibinomial)
-          }
-        }
-    }
-
     # Split the data randomly, or by indexing vector, or use a predefined
     # column, based on the length of p_train
     if (length(train) == 1) {
@@ -187,7 +168,6 @@ policy <-
                 pred1 = pred1,
                 fit_ptreat = fit_ptreat,
                 pred_ptreat = pred_ptreat,
-                fit2 = fit2,
                 m_resp_ctl = NULL,
                 m_resp_trt = NULL,
                 m_ptrt = NULL,

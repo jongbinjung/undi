@@ -6,7 +6,7 @@
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
   resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
-  fit_fn = c("logit"), verbose = interactive(), debug = FALSE)
+  fit_fn = c("logit"), verbose = interactive(), debug = FALSE, ...)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -51,6 +51,9 @@ regression}
 
 \item{debug}{logical flag, if TRUE, returns a list of results and the
 expanded data frame used to fit model}
+
+\item{...}{additional arguments to pass to \code{fit} function from
+\code{\link{di_model}} for fine-tuning}
 }
 \value{
 \code{tidy} dataframe of second-stage model coefficients after

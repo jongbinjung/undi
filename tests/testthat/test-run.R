@@ -25,8 +25,6 @@ test_that("policy can generate a trivial object with custom values", {
     outcome = "y",
     ptreat = .5,
     # Dummy function to skip model fitting
-    fit2 = function(f, d)
-      lm(1 ~ 1, d),
     resp_ctl = 0,
     resp_trt = 1
   )

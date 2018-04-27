@@ -12,9 +12,9 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
   rad_ctls <- unique(x$results$controls)
   sens_pd <- x$results %>%
     dplyr::group_by(term) %>%
-    dplyr::mutate(odds_ratio = exp(estimate),
-                  ciub = exp(estimate + 2 * std.error.naive),
-                  cilb = exp(estimate - 2 * std.error.naive)) %>%
+    dplyr::mutate(odds_ratio = estimate,
+                  ciub = estimate + 2 * std.error.naive,
+                  cilb = estimate - 2 * std.error.naive) %>%
     dplyr::summarize(
       ub = max(odds_ratio),
       lb = min(odds_ratio),
@@ -24,9 +24,9 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
 
   base_pd <- x$base_case %>%
     dplyr::filter(controls %in% rad_ctls) %>%
-    dplyr::mutate(odds_ratio = exp(estimate),
-                  base_ciub = exp(estimate + 2 * std.error.naive),
-                  base_cilb = exp(estimate - 2 * std.error.naive))
+    dplyr::mutate(odds_ratio = estimate,
+                  base_ciub = estimate + 2 * std.error.naive,
+                  base_cilb = estimate - 2 * std.error.naive)
 
   pd <- merge(base_pd, sens_pd, by = "term")
 

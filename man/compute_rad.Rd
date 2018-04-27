@@ -29,8 +29,8 @@ than 1) of rows to sample, if down sampling the (test) data; default is 1
 
 \item{seed}{random seed to set}
 
-\item{...}{additional arguments to pass to \code{\link{di_models}} for
-fine-tuning}
+\item{...}{additional arguments to pass to \code{fit} function from
+\code{\link{di_model}} for fine-tuning}
 }
 \value{
 tidy data frame of rad coefficients
