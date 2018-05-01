@@ -104,11 +104,11 @@ di_model <- function(pol, controls = NULL, fit_fn = c("logit", "gam")) {
       label = label,
       fit = function(d, w = NULL, ...) {
         if (is.null(w)) {
-          gam::gam(f, data = d, ...)
+          gam::gam(f, data = d, family = stats::quasibinomial, ...)
         } else {
           # Make sure that the weights exist in d at the time of call
           d$w <- w
-          gam::gam(f, data = d, weights = w, ...)
+          gam::gam(f, data = d, weights = w, family = stats::quasibinomial, ...)
         }
       },
       pred = function(m, d) {
