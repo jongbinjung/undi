@@ -4,12 +4,17 @@
 \alias{plot.policy}
 \title{Plot risk-treatment and calibration plots for a \code{policy}}
 \usage{
-\method{plot}{policy}(x, nbins = 10, ...)
+\method{plot}{policy}(x, nbins = 10, method = "glm",
+  method.args = list(family = "quasibinomial"), ...)
 }
 \arguments{
 \item{x}{object of class \code{policy}}
 
 \item{nbins}{number of bins to use (e.g., for calibration plots)}
+
+\item{method}{passed to \code{\link[ggplot2]{geom_smooth}}}
+
+\item{method.args}{passed to \code{\link[ggplot2]{geom_smooth}}}
 
 \item{...}{ignored; included for S3 generic/method consistency}
 }

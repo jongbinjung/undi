@@ -77,11 +77,17 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
 #'
 #' @param x object of class \code{policy}
 #' @param nbins number of bins to use (e.g., for calibration plots)
+#' @param method passed to \code{\link[ggplot2]{geom_smooth}}
+#' @param method.args passed to \code{\link[ggplot2]{geom_smooth}}
 #' @param ... ignored; included for S3 generic/method consistency
 #'
 #' @return a named list of ggplot object
 #' @export
-plot.policy <- function(x, nbins = 10, ...) {
+plot.policy <- function(x,
+                        nbins = 10,
+                        method = "glm",
+                        method.args = list(family = "quasibinomial"),
+                        ...) {
   s_treatment <- x$treatment
   v_outcome <- rlang::sym(x$outcome)
   v_group <- rlang::sym(x$grouping)
@@ -95,7 +101,7 @@ plot.policy <- function(x, nbins = 10, ...) {
       y = paste0("as.numeric(", x$treatment, ")")
     )) +
     geom_smooth(aes_string(color = x$grouping),
-                method = "glm", method.args = list(family = "binomial")) +
+                method = method, method.args = method.args) +
     scale_x_continuous(paste0("\nEstimated risk (", x$risk_col, ")"),
                        labels = scales::percent) +
     scale_y_continuous(paste0("Outcome (", x$outcome, ")"), labels = scales::percent)
@@ -148,11 +154,17 @@ plot.policy <- function(x, nbins = 10, ...) {
 #' @param down_sample (Optional) proportion (between 0 and 1) or number (greater
 #'   than 1) of rows to sample from each group, if down sampling the data;
 #'   default is 30
+#' @param method passed to \code{\link[ggplot2]{geom_smooth}}
+#' @param method.args passed to \code{\link[ggplot2]{geom_smooth}}
 #' @param ... ignored; included for S3 generic/method consistency
 #'
 #' @return a ggplot object
 #' @export
-plot.sensitive_policy <- function(x, down_sample = 30, ...) {
+plot.sensitive_policy <- function(x,
+                                  down_sample = 30,
+                                  method = "glm",
+                                  method.args = list(family = "quasibinomial"),
+                                  ...) {
   s_treatment <- x$treatment
   v_outcome <- rlang::sym(x$outcome)
   v_group <- rlang::sym(x$grouping)
@@ -193,8 +205,8 @@ plot.sensitive_policy <- function(x, down_sample = 30, ...) {
       alpha = "type",
       color = x$grouping
     )) +
-    geom_smooth(formula = y ~ x, data = pd, se = FALSE, method = "glm",
-                method.args = list(family = "quasibinomial"),
+    geom_smooth(formula = y ~ x, data = pd, se = FALSE, method = method,
+                method.args = method.args,
                 aes(weight = weights__, linetype = type)) +
     geom_point(aes(shape = type, size = weights__)) +
     geom_point(data = sens_df, aes(shape = type, size = weights__)) +

@@ -4,7 +4,8 @@
 \alias{plot.sensitive_policy}
 \title{Plot changes in risk-treatment for a \code{sensitive_policy}}
 \usage{
-\method{plot}{sensitive_policy}(x, down_sample = 30, ...)
+\method{plot}{sensitive_policy}(x, down_sample = 30, method = "glm",
+  method.args = list(family = "quasibinomial"), ...)
 }
 \arguments{
 \item{x}{object of class \code{sensitive_policy}}
@@ -12,6 +13,10 @@
 \item{down_sample}{(Optional) proportion (between 0 and 1) or number (greater
 than 1) of rows to sample from each group, if down sampling the data;
 default is 30}
+
+\item{method}{passed to \code{\link[ggplot2]{geom_smooth}}}
+
+\item{method.args}{passed to \code{\link[ggplot2]{geom_smooth}}}
 
 \item{...}{ignored; included for S3 generic/method consistency}
 }
