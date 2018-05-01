@@ -5,7 +5,7 @@
 \title{Get list of formula and functions to fit and predict treatment given risk,
 group, and controls}
 \usage{
-di_model(pol, controls = NULL, fit_fn = c("logit"))
+di_model(pol, controls = NULL, fit_fn = c("logit", "gam"))
 }
 \arguments{
 \item{pol}{a \code{\link{policy}} object}

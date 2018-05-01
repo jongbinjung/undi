@@ -24,7 +24,7 @@ compute_rad <-
            controls = NULL,
            base_group = NULL,
            minority_groups = NULL,
-           fit_fn = c("logit"),
+           fit_fn = c("logit", "gam"),
            down_sample = 1,
            seed = round(stats::runif(1)*1e4),
            ...) {

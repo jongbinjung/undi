@@ -6,7 +6,7 @@
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
   resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
-  fit_fn = c("logit"), verbose = interactive(), debug = FALSE, ...)
+  fit_fn = c("logit", "gam"), verbose = interactive(), debug = FALSE, ...)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -56,8 +56,7 @@ expanded data frame used to fit model}
 \code{\link{di_model}} for fine-tuning}
 }
 \value{
-\code{tidy} dataframe of second-stage model coefficients after
-  applying sensitivity parameters, with a nested column of sensitivity params
+\code{list} of sensitized data frame and estimates
 }
 \description{
 Sensitivity to unobserved confounders with specified parameters

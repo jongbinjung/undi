@@ -5,7 +5,7 @@
 \title{Compute risk-adjusted disparate impact estimate for a policy}
 \usage{
 compute_rad(pol, controls = NULL, base_group = NULL,
-  minority_groups = NULL, fit_fn = c("logit"), down_sample = 1,
+  minority_groups = NULL, fit_fn = c("logit", "gam"), down_sample = 1,
   seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{

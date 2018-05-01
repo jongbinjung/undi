@@ -61,7 +61,7 @@ optimsens <-
            range_q_ratio = NULL,
            allow_sgv = FALSE,
            controls = NULL,
-           optim_fit = c("logit"),
+           optim_fit = c("logit", "gam"),
            optim_control = list(),
            include_benchmark = FALSE,
            verbose = TRUE,
@@ -533,7 +533,7 @@ gridsens <-
             q_range = FALSE,
             allow_sgv = FALSE,
             naive_se = FALSE,
-            optim_fit = c("logit"),
+            optim_fit = c("logit", "gam"),
             verbose = TRUE,
             return_scalar = TRUE) {
   # Validate input

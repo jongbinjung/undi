@@ -42,7 +42,6 @@ models <- function() {
   )
 }
 
-
 #' Get list of formula and functions to fit and predict treatment given risk,
 #' group, and controls
 #'
@@ -54,7 +53,7 @@ models <- function() {
 #' @return a list with model types (e.g., glm/gbm), each with the original
 #'   \code{formula}, and appropriate \code{$fit} and \code{$pred} functions
 #' @export
-di_model <- function(pol, controls = NULL, fit_fn = c("logit")) {
+di_model <- function(pol, controls = NULL, fit_fn = c("logit", "gam")) {
   fit_fn = match.arg(fit_fn)
 
   if (fit_fn == "logit") {
@@ -81,6 +80,39 @@ di_model <- function(pol, controls = NULL, fit_fn = c("logit")) {
         stats::predict.glm(object = m,
                            newdata = d,
                            type = "response")
+      }
+    )
+
+    class(ret) <- c("di_model", class(ret))
+
+    return(ret)
+  }
+
+  if (fit_fn == "gam") {
+    if (!is.null(controls)) {
+      stop("controls are not yet implemented for non-parametric rad")
+    }
+
+    feats <- c(pol$grouping, "risk__")
+
+    f <- .make_formula(pol$treatment, feats)
+
+    label <- paste(feats, collapse = ", ")
+
+    ret <- list(
+      formula = f,
+      label = label,
+      fit = function(d, w = NULL, ...) {
+        if (is.null(w)) {
+          gam::gam(f, data = d, ...)
+        } else {
+          # Make sure that the weights exist in d at the time of call
+          d$w <- w
+          gam::gam(f, data = d, weights = w, ...)
+        }
+      },
+      pred = function(m, d) {
+        gam::predict.Gam(m, d, type = "response")
       }
     )
 

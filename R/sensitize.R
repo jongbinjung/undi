@@ -41,8 +41,7 @@
 #'   to corresponding rows}} Note that if \code{compare} is specified, the
 #'   number of grouping levels is effectively the length of \code{compare}
 #'
-#' @return \code{tidy} dataframe of second-stage model coefficients after
-#'   applying sensitivity parameters, with a nested column of sensitivity params
+#' @return \code{list} of sensitized data frame and estimates
 #'
 #' @export
 sensitivity <-
@@ -57,7 +56,7 @@ sensitivity <-
            resp_trt = NULL,
            controls = NULL,
            naive_se = TRUE,
-           fit_fn = c("logit"),
+           fit_fn = c("logit", "gam"),
            verbose = interactive(),
            debug = FALSE,
            ...) {

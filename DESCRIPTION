@@ -23,6 +23,7 @@ Imports:
     dplyr,
     forcats,
     foreach,
+    gam,
     gbm,
     ggplot2,
     glmnet,
