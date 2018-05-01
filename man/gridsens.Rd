@@ -7,7 +7,7 @@
 gridsens(pol, qs = c(0, 0.4, 0.5, 0.6, 1), dps = c(0, log(2)), d0s = c(0,
   log(2)), d1s = c(0, log(2)), params_grid = NULL, base_group = NULL,
   minority_groups = NULL, allow_sgv = FALSE, controls = NULL,
-  include_benchmark = FALSE, verbose = TRUE)
+  fit_fn = c("logit", "gam"), include_benchmark = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -41,6 +41,9 @@ value for each delta parameter will be used for each base/minority pair}
 
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}
+
+\item{fit_fn}{string indicating the fitting proceedure used in
+optimization}
 
 \item{include_benchmark}{logical; whether to include the two extreme
 benchmark test results (default: FALSE)}

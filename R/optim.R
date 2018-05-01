@@ -302,6 +302,8 @@ optimsens <-
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
+#' @param fit_fn string indicating the fitting proceedure used in
+#'   optimization
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
@@ -328,6 +330,7 @@ gridsens <-
            minority_groups = NULL,
            allow_sgv = FALSE,
            controls = NULL,
+           fit_fn = c("logit", "gam"),
            include_benchmark = FALSE,
            verbose = TRUE) {
   # Input validation
@@ -411,6 +414,7 @@ gridsens <-
         dp = c(params$ab, params$am),
         d0 = c(params$d0b, params$d0m),
         d1 = c(params$d1b, params$d1m),
+        fit_fn = fit_fn,
         controls = controls,
         naive_se = FALSE,
         verbose = FALSE
@@ -446,6 +450,7 @@ gridsens <-
       d1 = c(params$d1b, params$d1m),
       controls = controls,
       naive_se = TRUE,
+      fit_fn = fit_fn,
       verbose = FALSE
       ) %>%
       dplyr::mutate(pars = list(params))
@@ -459,6 +464,7 @@ gridsens <-
       minority_groups,
       function(group) {
         sensitivity(pol, 0, 0, 0, 0, compare = c(base_group, group),
+                    fit_fn = fit_fn,
                     controls = controls)
       }))
 
