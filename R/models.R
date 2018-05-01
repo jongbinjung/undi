@@ -89,13 +89,11 @@ di_model <- function(pol, controls = NULL, fit_fn = c("logit", "gam")) {
   }
 
   if (fit_fn == "gam") {
-    if (!is.null(controls)) {
-      stop("controls are not yet implemented for non-parametric rad")
-    }
+    feats <- c(pol$grouping, "risk__", controls)
 
-    feats <- c(pol$grouping, "risk__")
-
-    f <- .make_formula(pol$treatment, feats)
+    # f <- .make_formula(pol$treatment, feats)
+    f <- .make_formula(pol$treatment,
+                       c(feats, paste0(pol$grouping, ":", "risk__")))
 
     label <- paste(feats, collapse = ", ")
 
