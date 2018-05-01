@@ -108,8 +108,6 @@ sensitivity <-
                                      collapse = ", "))
   }
 
-  wfit <- function(d, ...) dm$fit(d, w = d$weights__, ...)
-
   sens_pol <- sensitize(pol, q = q, dp = dp, d0 = d0, d1 = d1,
                         compare = compare,
                         ptreat = ptreat,
@@ -134,7 +132,7 @@ sensitivity <-
   coefs <- .compute_estimate(d = d_,
                              cn_group = pol$grouping,
                              dm = dm,
-                             alt_fit = wfit)
+                             weighted = TRUE)
 
   # TODO(jongbin): "sgd" should be re-implemented or removed?
   # } else if (fit_fn == 'sgd') {

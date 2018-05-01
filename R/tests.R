@@ -273,7 +273,7 @@ compute_rad_old <-
   function(d,
            cn_group,
            dm,
-           alt_fit = NULL,
+           weighted = FALSE,
            ...) {
   # Fit model
   groups <- .get_groups(d[[cn_group]])
@@ -285,16 +285,20 @@ compute_rad_old <-
 
     tmp_df <- d[target_group_ind, ]
 
-    if (is.null(alt_fit)) {
+    if (weighted) {
+      m <- dm$fit(tmp_df, w = tmp_df$weights__, ...)
+    } else {
       m <- dm$fit(tmp_df, ...)
-    } else{
-      m <- alt_fit(tmp_df)
     }
 
     ptrt <- purrr::map_dbl(c(base_group, group), function(x) {
       counter_df <- tmp_df
       counter_df[[cn_group]] <- x
-      mean(dm$pred(m, counter_df))
+      if (weighted) {
+        stats::weighted.mean(dm$pred(m, counter_df), w = counter_df$weights__)
+      } else {
+        mean(dm$pred(m, counter_df))
+      }
     })
 
     odds <- ptrt / (1 - ptrt)
