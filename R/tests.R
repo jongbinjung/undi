@@ -308,6 +308,8 @@ compute_rad_old <-
     dplyr::tibble(term = paste0(cn_group, group),
                   estimate = or,
                   std.error = 0,
+                  ptrt_base = ptrt[1],
+                  ptrt_minor = ptrt[2],
                   controls = dm$label)
   })
 }
