@@ -46,14 +46,14 @@ models <- function() {
 #' group, and controls
 #'
 #' @param pol a \code{\link{policy}} object
+#' @param fit_fn string indicating the fitting proceedure used.
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
-#' @param fit_fn string indicating the fitting proceedure used.
 #'
 #' @return a list with model types (e.g., glm/gbm), each with the original
 #'   \code{formula}, and appropriate \code{$fit} and \code{$pred} functions
 #' @export
-di_model <- function(pol, controls = NULL, fit_fn = c("logit", "gam")) {
+di_model <- function(pol, fit_fn = c("logit", "gam"), controls = NULL) {
   fit_fn = match.arg(fit_fn)
 
   if (fit_fn == "logit") {
@@ -89,11 +89,11 @@ di_model <- function(pol, controls = NULL, fit_fn = c("logit", "gam")) {
   }
 
   if (fit_fn == "gam") {
-    feats <- c(pol$grouping, "s(risk__)", controls)
+    feats <- c(pol$grouping, "gam::s(risk__)", controls)
 
     # f <- .make_formula(pol$treatment, feats)
     f <- .make_formula(pol$treatment,
-                       c(feats, paste0(pol$grouping, ":", "s(risk__)")))
+                       c(feats, paste0(pol$grouping, ":", "risk__")))
 
     label <- paste(feats, collapse = ", ")
 

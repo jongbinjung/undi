@@ -5,15 +5,15 @@
 \title{Get list of formula and functions to fit and predict treatment given risk,
 group, and controls}
 \usage{
-di_model(pol, controls = NULL, fit_fn = c("logit", "gam"))
+di_model(pol, fit_fn = c("logit", "gam"), controls = NULL)
 }
 \arguments{
 \item{pol}{a \code{\link{policy}} object}
 
+\item{fit_fn}{string indicating the fitting proceedure used.}
+
 \item{controls}{character vector of additional controls to consider in the
 second-stage model}
-
-\item{fit_fn}{string indicating the fitting proceedure used.}
 }
 \value{
 a list with model types (e.g., glm/gbm), each with the original
