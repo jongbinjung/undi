@@ -91,7 +91,6 @@ di_model <- function(pol, fit_fn = c("logit", "gam"), controls = NULL) {
   if (fit_fn == "gam") {
     feats <- c(pol$grouping, "gam::s(risk__)", controls)
 
-    # f <- .make_formula(pol$treatment, feats)
     f <- .make_formula(pol$treatment,
                        c(feats, paste0(pol$grouping, ":", "risk__")))
 
