@@ -33,7 +33,11 @@ than 1) of rows to sample, if down sampling the (test) data; default is 1
 \code{\link{di_model}} for fine-tuning}
 }
 \value{
-tidy data frame of rad coefficients
+tidy data frame with columns \item{term}{the group members considered
+  minority} \item{estimate}{the treatment ratio of each minority group over
+  base group} \item{std.error}{TO BE IMPLEMENTED! FOR NOW, ALL ZERO}
+  \item{ptrt_base/minor}{estimated average treatment probability for base/minority
+  groups} \item{controls}{features controlled for}
 }
 \description{
 Compute risk-adjusted disparate impact estimate for a policy

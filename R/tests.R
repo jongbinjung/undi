@@ -16,7 +16,11 @@
 #' @param ... additional arguments to pass to \code{fit} function from
 #'   \code{\link{di_model}} for fine-tuning
 #'
-#' @return tidy data frame of rad coefficients
+#' @return tidy data frame with columns \item{term}{the group members considered
+#'   minority} \item{estimate}{the treatment ratio of each minority group over
+#'   base group} \item{std.error}{TO BE IMPLEMENTED! FOR NOW, ALL ZERO}
+#'   \item{ptrt_base/minor}{estimated average treatment probability for base/minority
+#'   groups} \item{controls}{features controlled for}
 #'
 #' @export
 compute_rad <-
@@ -301,12 +305,11 @@ compute_rad_old <-
       }
     })
 
-    odds <- ptrt / (1 - ptrt)
-    or <- odds[2]/odds[1]
+    trt_ratio <- ptrt[2]/ptrt[1]
 
     # TODO: estimate standard errors? (just create column of 0 for now)
     dplyr::tibble(term = paste0(cn_group, group),
-                  estimate = or,
+                  estimate = trt_ratio,
                   std.error = 0,
                   ptrt_base = ptrt[1],
                   ptrt_minor = ptrt[2],
