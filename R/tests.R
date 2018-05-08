@@ -1,13 +1,7 @@
 #' Compute risk-adjusted disparate impact estimate for a policy
 #'
-#' @param pol object of class policy
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
-#' @param base_group (Optional) single group that acts as the pivot/base; by
-#'   default, if the grouping variable is a factor, set to the first level,
-#'   otherwise set to the first of sorted unique values
-#' @param minority_groups (Optional) groups to compare to the base group; by
-#'   default, set to every unique value other than the base group
 #' @param fit_fn string indicating the fitting proceedure used.
 #' @param down_sample (Optional) proportion (between 0 and 1) or number (greater
 #'   than 1) of rows to sample, if down sampling the (test) data; default is 1
@@ -19,9 +13,10 @@
 #' @return tidy data frame with columns \item{term}{the group members considered
 #'   minority} \item{estimate}{the treatment ratio of each minority group over
 #'   base group} \item{std.error}{TO BE IMPLEMENTED! FOR NOW, ALL ZERO}
-#'   \item{ptrt_base/minor}{estimated average treatment probability for base/minority
-#'   groups} \item{controls}{features controlled for}
+#'   \item{ptrt_base/minor}{estimated average treatment probability for
+#'   base/minority groups} \item{controls}{features controlled for}
 #'
+#' @inheritParams .validate_input
 #' @export
 compute_rad <-
   function(pol,
@@ -34,39 +29,15 @@ compute_rad <-
            ...) {
     set.seed(seed)
     # Input validation
-    if (!("policy" %in% class(pol))) {
-      stop("Expected object of class policy")
-    }
-
-    if (length(base_group) > 1) {
-      stop("Specify a single base group.\n\tGot: ", base_group)
-    }
+    groups <- .validate_input(pol, base_group, minority_groups)
+    base_group <- groups$base
+    minority_groups <- groups$minority
 
     fit_fn <- match.arg(fit_fn)
 
     dm <- di_model(pol, controls, fit_fn = fit_fn)
 
     d <- pol$data
-
-    group_col <- d[[pol$grouping]]
-    groups <- .get_groups(group_col)
-
-    check_groups <- sapply(c(base_group, minority_groups),
-                           function(x) x %in% groups)
-    if (!all(check_groups)) {
-      stop(sprintf("%s - not member of %s",
-                   paste0(c(base_group, minority_groups)[!check_groups],
-                          collapse = ","),
-                   pol$grouping))
-    }
-
-    if (is.null(base_group)) {
-      base_group <- groups[1]
-    }
-
-    if (is.null(minority_groups)) {
-      minority_groups <- groups[-1]
-    }
 
     # Restrict data to groups of interest
     target_group_ind <- d[[pol$grouping]] %in% c(base_group, minority_groups)
@@ -88,20 +59,15 @@ compute_rad <-
 
 #' Compute benchmark test for disparate impact of a policy
 #'
-#' @param pol object of class policy
 #' @param controls character vector of additional controls to consider (i.e.,
 #'   valid benchmarks)
 #' @param kitchen_sink logical; if TRUE, ignore \code{controls} argument, and
 #'   include all variables given with the policy, i.e., policy$features
 #'   (default: FALSE)
-#' @param base_group (Optional) single group that acts as the pivot/base; by
-#'   default, if the grouping variable is a factor, set to the first level,
-#'   otherwise set to the first of sorted unique values
-#' @param minority_groups (Optional) groups to compare to the base group; by
-#'   default, set to every unique value other than the base group
 #'
 #' @return tidy data frame of benchmark coefficients
 #'
+#' @inheritParams .validate_input
 #' @export
 compute_bm <-
   function(pol,
@@ -110,39 +76,15 @@ compute_bm <-
            base_group = NULL,
            minority_groups = NULL) {
     # Input validation
-    if (!("policy" %in% class(pol))) {
-      stop("Expected object of class policy")
-    }
-
-    if (length(base_group) > 1) {
-      stop("Specify a single base group.\n\tGot: ", base_group)
-    }
-
-    d <- pol$data
-    group_col <- d[[pol$grouping]]
-    groups <- .get_groups(group_col)
-
-    check_groups <- sapply(c(base_group, minority_groups),
-                           function(x) x %in% groups)
-    if (!all(check_groups)) {
-      stop(sprintf("%s - not member of %s",
-                   paste0(c(base_group, minority_groups)[!check_groups],
-                          collapse = ","),
-                   pol$grouping))
-    }
-
-    if (is.null(base_group)) {
-      base_group <- groups[1]
-    }
-
-    if (is.null(minority_groups)) {
-      minority_groups <- groups[-1]
-    }
+    groups <- .validate_input(pol, base_group, minority_groups)
+    base_group <- groups$base
+    minority_groups <- groups$minority
 
     if (kitchen_sink) {
       controls <- pol$features
     }
 
+    d <- pol$data
     test_df <- d[d$fold__ == "test", ]
 
     ret <- purrr::map_dfr(minority_groups, function(comp) {
@@ -315,4 +257,50 @@ compute_rad_old <-
                   ptrt_minor = ptrt[2],
                   controls = dm$label)
   })
+  }
+
+
+#' Validate input for
+#'
+#' @param pol object of class policy
+#' @param base_group (Optional) single group that acts as the pivot/base; by
+#'   default, if the grouping variable is a factor, set to the first level,
+#'   otherwise set to the first of sorted unique values
+#' @param minority_groups (Optional) groups to compare to the base group; by
+#'   default, set to every unique value other than the base group
+#'
+#' @return list of validated group members \item{base}{base group
+#'   members}\item{minority}{minority group members}
+.validate_input <- function(pol, base_group, minority_groups) {
+  if (!("policy" %in% class(pol))) {
+    stop("Expected object of class policy")
+  }
+
+  if (length(base_group) > 1) {
+    stop("Specify a single base group.\n\tGot: ", base_group)
+  }
+
+  d <- pol$data
+
+  group_col <- d[[pol$grouping]]
+  groups <- .get_groups(group_col)
+
+  check_groups <- sapply(c(base_group, minority_groups),
+                         function(x) x %in% groups)
+  if (!all(check_groups)) {
+    stop(sprintf("%s - not member of %s",
+                 paste0(c(base_group, minority_groups)[!check_groups],
+                        collapse = ","),
+                 pol$grouping))
+  }
+
+  if (is.null(base_group)) {
+    base_group <- groups[1]
+  }
+
+  if (is.null(minority_groups)) {
+    minority_groups <- groups[!(groups == base_group)]
+  }
+
+  list(base = base_group, minority = minority_groups)
 }
