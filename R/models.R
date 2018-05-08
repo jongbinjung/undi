@@ -42,88 +42,123 @@ models <- function() {
   )
 }
 
-#' Get list of formula and functions to fit and predict treatment given risk,
-#' group, and controls
+
+#' Given a policy and (optional) controls, generate a rad_control object
 #'
 #' @param pol a \code{\link{policy}} object
-#' @param fit_fn string indicating the fitting proceedure used.
+#' @param fit_fn string indicating the rad estimation model/procedure used.
+#'   \code{*_coef} methods use models without interaction between risk and
+#'   group, and return the coeficient on group membership. \code{*_avg} methods
+#'   will fit more flexible models (possibly with interactions), and compute
+#'   average ratios across the population. (TODO: better documentation is
+#'   expected)
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
 #'
-#' @return a list with model types (e.g., glm/gbm), each with the original
-#'   \code{formula}, and appropriate \code{$fit} and \code{$pred} functions
+#' @return a \code{rad_control} object constructed of \item{formula}{the formula
+#'   used in model fitting} \item{label}{a character label associated with the
+#'   model fit type} \item{grouping}{column name of group, as specified in
+#'   \code{pol$grouping}} \item{fit}{a function of the form f(d, w = NULL, ...)
+#'   for fitting a model with training data \code{d}} \item{pred}{function of
+#'   the form g(m, d) for generating predictions for data \code{d} with model
+#'   \code{m}} \item{method}{character string describing the method to use}
 #' @export
-di_model <- function(pol, fit_fn = c("logit", "gam"), controls = NULL) {
-  fit_fn = match.arg(fit_fn)
+rad_control <-
+  function(pol,
+           fit_fn = c("logit_coef", "logit_avg", "gam_avg"),
+           controls = NULL) {
+  fit_fn <- match.arg(fit_fn)
 
-  if (fit_fn == "logit") {
-    feats <- c(pol$grouping, "risk__", controls)
+  switch (fit_fn,
+    logit_coef = {
+      feats <- c(pol$grouping, "risk__", controls)
 
-    f <- .make_formula(pol$treatment,
-                       c(feats, paste0(pol$grouping, ":", "risk__")))
+      f <- .make_formula(pol$treatment, feats)
 
-    label <- paste(feats, collapse = ", ")
+      label <- paste(feats, collapse = ", ")
 
-    ret <- list(
-      formula = f,
-      label = label,
-      fit = function(d, w = NULL, ...) {
-        if (is.null(w)) {
-          stats::glm(f, d, family = stats::quasibinomial, ...)
-        } else {
-          # Make sure that the weights exist in d at the time of call
-          d$w <- w
-          stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
-        }
-      },
-      pred = function(m, d) {
-        stats::predict.glm(object = m,
-                           newdata = d,
-                           type = "response")
-      }
-    )
+      ret <- list(
+        formula = f,
+        label = label,
+        fit = function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            stats::glm(f, d, family = stats::quasibinomial, ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
+          }
+        },
+        pred = function(m, d) {
+          stats::predict.glm(object = m,
+                             newdata = d,
+                             type = "response")
+        },
+        method = "coef"
+      )
+    },
+    logit_avg = {
+      feats <- c(pol$grouping, "risk__", controls)
 
-    class(ret) <- c("di_model", class(ret))
+      f <- .make_formula(pol$treatment,
+                         c(feats, paste0(pol$grouping, ":", "risk__")))
 
-    return(ret)
-  }
+      label <- paste(feats, collapse = ", ")
 
-  if (fit_fn == "gam") {
-    feats <- c(pol$grouping, "gam::s(risk__)", controls)
+      ret <- list(
+        formula = f,
+        label = label,
+        fit = function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            stats::glm(f, d, family = stats::quasibinomial, ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
+          }
+        },
+        pred = function(m, d) {
+          stats::predict.glm(object = m,
+                             newdata = d,
+                             type = "response")
+        },
+        method = "avg"
+      )
+    },
+    gam_avg = {
+      feats <- c(pol$grouping, "gam::s(risk__)", controls)
 
-    f <- .make_formula(pol$treatment,
-                       c(feats, paste0(pol$grouping, ":", "risk__")))
+      f <- .make_formula(pol$treatment,
+                         c(feats, paste0(pol$grouping, ":", "risk__")))
 
-    label <- paste(feats, collapse = ", ")
+      label <- paste(feats, collapse = ", ")
 
-    ret <- list(
-      formula = f,
-      label = label,
-      fit = function(d, w = NULL, ...) {
-        if (is.null(w)) {
-          gam::gam(f, data = d, family = stats::quasibinomial, ...)
-        } else {
-          # Make sure that the weights exist in d at the time of call
-          d$w <- w
-          gam::gam(f, data = d, weights = w, family = stats::quasibinomial, ...)
-        }
-      },
-      pred = function(m, d) {
-        gam::predict.Gam(m, d, type = "response")
-      }
-    )
+      ret <- list(
+        formula = f,
+        label = label,
+        fit = function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            gam::gam(f, data = d, family = stats::quasibinomial, ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            gam::gam(f, data = d, weights = w, family = stats::quasibinomial, ...)
+          }
+        },
+        pred = function(m, d) {
+          gam::predict.Gam(m, d, type = "response")
+        },
+        method = "avg"
+      )
+    },
+    stop("Failed to construct disparate impact model functions\n",
+         "\t(Unknown fit_fn?)")
+  )
 
-    class(ret) <- c("di_model", class(ret))
+  ret$grouping <- pol$grouping
 
-    return(ret)
-  }
-
-  # Additional types to support should go here
-  # if (fit_fn == "gbm") {
-  #
-  # }
-
-  stop("Failed to construct disparate impact model functions\n\t(Unknown fit_fn?)")
+  class(ret) <- c("rad_control", class(ret))
+  return(ret)
 }
 
 

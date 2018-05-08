@@ -7,7 +7,7 @@
 optimsens(pol, range_q = c(0, 1), range_dp = c(0, log(2)), range_d0 = c(0,
   log(2)), range_d1 = c(0, log(2)), base_group = NULL,
   minority_groups = NULL, range_q_ratio = NULL, allow_sgv = FALSE,
-  controls = NULL, optim_fit = c("logit", "gam"), optim_control = list(),
+  controls = NULL, fit_fn = "logit_coef", optim_control = list(),
   include_benchmark = FALSE, verbose = TRUE, debug = FALSE)
 }
 \arguments{
@@ -44,8 +44,12 @@ value for each delta parameter will be used for each base/minority pair}
 \item{controls}{vector of legitimate controls to use; the ones specified
 within the policy object will be used if not specified}
 
-\item{optim_fit}{string indicating the fitting proceedure used in
-optimization}
+\item{fit_fn}{string indicating the rad estimation model/procedure used.
+\code{*_coef} methods use models without interaction between risk and
+group, and return the coeficient on group membership. \code{*_avg} methods
+will fit more flexible models (possibly with interactions), and compute
+average ratios across the population. (TODO: better documentation is
+expected)}
 
 \item{optim_control}{list of control parameters passed to \code{optim}}
 

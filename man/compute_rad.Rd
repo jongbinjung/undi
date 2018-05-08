@@ -5,7 +5,7 @@
 \title{Compute risk-adjusted disparate impact estimate for a policy}
 \usage{
 compute_rad(pol, controls = NULL, base_group = NULL,
-  minority_groups = NULL, fit_fn = c("logit", "gam"), down_sample = 1,
+  minority_groups = NULL, fit_fn = "logit_coef", down_sample = 1,
   seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{
@@ -21,7 +21,12 @@ otherwise set to the first of sorted unique values}
 \item{minority_groups}{(Optional) groups to compare to the base group; by
 default, set to every unique value other than the base group}
 
-\item{fit_fn}{string indicating the fitting proceedure used.}
+\item{fit_fn}{string indicating the rad estimation model/procedure used.
+\code{*_coef} methods use models without interaction between risk and
+group, and return the coeficient on group membership. \code{*_avg} methods
+will fit more flexible models (possibly with interactions), and compute
+average ratios across the population. (TODO: better documentation is
+expected)}
 
 \item{down_sample}{(Optional) proportion (between 0 and 1) or number (greater
 than 1) of rows to sample, if down sampling the (test) data; default is 1
@@ -30,7 +35,7 @@ than 1) of rows to sample, if down sampling the (test) data; default is 1
 \item{seed}{random seed to set}
 
 \item{...}{additional arguments to pass to \code{fit} function from
-\code{\link{di_model}} for fine-tuning}
+\code{\link{rad_control}} for fine-tuning}
 }
 \value{
 tidy data frame with columns \item{term}{the group members considered

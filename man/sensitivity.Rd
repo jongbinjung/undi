@@ -6,7 +6,7 @@
 \usage{
 sensitivity(pol, q, dp, d0, d1, compare = NULL, ptreat = NULL,
   resp_ctl = NULL, resp_trt = NULL, controls = NULL, naive_se = TRUE,
-  fit_fn = c("logit", "gam"), verbose = interactive(), debug = FALSE, ...)
+  fit_fn = "logit_coef", verbose = interactive(), debug = FALSE, ...)
 }
 \arguments{
 \item{pol}{object of class \code{policy}}
@@ -45,7 +45,12 @@ within the policy object will be used if not specified}
 (non-sensitivity) test, as well as std.errors from final weighted
 regression}
 
-\item{fit_fn}{string indicating the fitting proceedure used.}
+\item{fit_fn}{string indicating the rad estimation model/procedure used.
+\code{*_coef} methods use models without interaction between risk and
+group, and return the coeficient on group membership. \code{*_avg} methods
+will fit more flexible models (possibly with interactions), and compute
+average ratios across the population. (TODO: better documentation is
+expected)}
 
 \item{verbose}{logical flag, if TRUE, print relevant messages for user}
 
@@ -53,7 +58,7 @@ regression}
 expanded data frame used to fit model}
 
 \item{...}{additional arguments to pass to \code{fit} function from
-\code{\link{di_model}} for fine-tuning}
+\code{\link{rad_control}} for fine-tuning}
 }
 \value{
 \code{list} of sensitized data frame and estimates

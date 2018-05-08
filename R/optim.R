@@ -26,8 +26,6 @@
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
-#' @param optim_fit string indicating the fitting proceedure used in
-#'   optimization
 #' @param optim_control list of control parameters passed to \code{optim}
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
@@ -49,6 +47,7 @@
 #'   base policy with specified groups and controls} \item{base_group}{base
 #'   group used in analysis}
 #'
+#' @inheritParams rad_control
 #' @export
 optimsens <-
   function(pol,
@@ -61,7 +60,7 @@ optimsens <-
            range_q_ratio = NULL,
            allow_sgv = FALSE,
            controls = NULL,
-           optim_fit = c("logit", "gam"),
+           fit_fn = "logit_coef",
            optim_control = list(),
            include_benchmark = FALSE,
            verbose = TRUE,
@@ -70,8 +69,6 @@ optimsens <-
   if (!("policy" %in% class(pol))) {
     stop("Expected object of class policy")
   }
-
-  optim_fit <- match.arg(optim_fit)
 
   if (length(base_group) > 1) {
     stop("Specify a single base group.\n\tGot: ", base_group)
@@ -192,7 +189,7 @@ optimsens <-
           q_range = !is.null(range_q_ratio),
           allow_sgv = allow_sgv,
           controls = controls,
-          optim_fit = optim_fit,
+          fit_fn = fit_fn,
           naive_se = FALSE,
           verbose = verbose
         ),
@@ -241,7 +238,7 @@ optimsens <-
       minority_groups,
       function(group) {
         sensitivity(pol, 0, 0, 0, 0, compare = c(base_group, group),
-                    controls = controls, fit_fn = optim_fit)
+                    controls = controls, fit_fn = fit_fn)
       }))
 
   base_case$method <- "rad"
@@ -302,8 +299,6 @@ optimsens <-
 #'   value for each delta parameter will be used for each base/minority pair
 #' @param controls vector of legitimate controls to use; the ones specified
 #'   within the policy object will be used if not specified
-#' @param fit_fn string indicating the fitting proceedure used in
-#'   optimization
 #' @param include_benchmark logical; whether to include the two extreme
 #'   benchmark test results (default: FALSE)
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
@@ -318,6 +313,7 @@ optimsens <-
 #'   specified groups and controls} \item{base_group}{base group used in
 #'   analysis}
 #'
+#' @inheritParams rad_control
 #' @export
 gridsens <-
   function(pol,
@@ -330,7 +326,7 @@ gridsens <-
            minority_groups = NULL,
            allow_sgv = FALSE,
            controls = NULL,
-           fit_fn = c("logit", "gam"),
+           fit_fn = "logit_coef",
            include_benchmark = FALSE,
            verbose = TRUE) {
   # Input validation
@@ -521,12 +517,12 @@ gridsens <-
 #' @param naive_se whether or not to compute "naive" std.errors in sensitivity;
 #'   FALSE by default, to avoid unnecessary computation, but should be computed
 #'   for final results once extreme values have been identified
-#' @param optim_fit string indicating the fitting proceedure used.
 #' @param verbose whether or not to print debug messages (0 = none, 1 = results
 #'   only, 2 = everything)
 #' @param return_scalar logical, whether to return a single scalar values (TRUE)
 #'   or to return the full result from \code{sensitivity}
 #'
+#' @inheritParams rad_control
 #' @return Function that will return coefficient on minority group
 .get_optim_fn <-
   function (pol,
@@ -539,16 +535,15 @@ gridsens <-
             q_range = FALSE,
             allow_sgv = FALSE,
             naive_se = FALSE,
-            optim_fit = c("logit", "gam"),
+            fit_fn = "logit_coef",
             verbose = TRUE,
             return_scalar = TRUE) {
+
   # Validate input
   if (length(compare) != 2) {
     stop("Can only get optim fn for comparison of two groups, got ",
          length(compare))
   }
-
-  optim_fit <- match.arg(optim_fit)
 
   if (is.null(free_params)) {
     free_params = rep(T, 8)
@@ -593,7 +588,7 @@ gridsens <-
       d1 = c(d1b, d1m),
       controls = controls,
       naive_se = naive_se,
-      fit_fn = optim_fit,
+      fit_fn = fit_fn,
       verbose = FALSE
     )
 

@@ -25,12 +25,11 @@
 #' @param naive_se logical flag, if TRUE, return std.error from naive
 #'   (non-sensitivity) test, as well as std.errors from final weighted
 #'   regression
-#' @param fit_fn string indicating the fitting proceedure used.
 #' @param verbose logical flag, if TRUE, print relevant messages for user
 #' @param debug logical flag, if TRUE, returns a list of results and the
 #'   expanded data frame used to fit model
 #' @param ... additional arguments to pass to \code{fit} function from
-#'   \code{\link{di_model}} for fine-tuning
+#'   \code{\link{rad_control}} for fine-tuning
 #'
 #' @details All sensitivity parameters (\code{q, dp, d0, d1}) can be provided in
 #'   one of three formats, determined by the \code{length} of each argument:
@@ -43,6 +42,7 @@
 #'
 #' @return \code{list} of sensitized data frame and estimates
 #'
+#' @inheritParams rad_control
 #' @export
 sensitivity <-
   function(pol,
@@ -56,7 +56,7 @@ sensitivity <-
            resp_trt = NULL,
            controls = NULL,
            naive_se = TRUE,
-           fit_fn = c("logit", "gam"),
+           fit_fn = "logit_coef",
            verbose = interactive(),
            debug = FALSE,
            ...) {
@@ -65,8 +65,7 @@ sensitivity <-
     stop("Expected object of class policy")
   }
 
-  fit_fn <- match.arg(fit_fn)
-  dm <- di_model(pol, controls, fit_fn = fit_fn, ...)
+  rc <- rad_control(pol, controls, fit_fn = fit_fn, ...)
 
   if (is.null(controls)) {
     controls <- pol$controls
@@ -96,11 +95,7 @@ sensitivity <-
       od[[pol$grouping]] <- forcats::fct_relevel(od[[pol$grouping]], compare)
     }
 
-    naive_coefs <- .compute_estimate(
-      d = od,
-      cn_group = pol$grouping,
-      dm
-    )
+    naive_coefs <- .compute_estimate(d = od, rc)
 
     naive_coefs <- naive_coefs[, c("term", "std.error")] %>%
       dplyr::mutate(controls = paste(c(pol$grouping, "risk__", controls),
@@ -128,10 +123,7 @@ sensitivity <-
 
   d_ <- dplyr::filter(d, weights__ != 0)
 
-  coefs <- .compute_estimate(d = d_,
-                             cn_group = pol$grouping,
-                             dm = dm,
-                             weighted = TRUE)
+  coefs <- .compute_estimate(d = d_, rc = rc, weighted = TRUE)
 
   # TODO(jongbin): "sgd" should be re-implemented or removed?
   # } else if (fit_fn == 'sgd') {
