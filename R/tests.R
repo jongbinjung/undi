@@ -125,19 +125,15 @@ compute_bm <-
 #' @inheritParams .validate_input
 #' @export
 compute_ot <- function(pol,
-                       base_group = NULL,
-                       minority_groups = NULL,
                        controls = NULL) {
-  # Input validation
-  groups <- .validate_input(pol, base_group, minority_groups)
-  base_group <- groups$base
-  minority_groups <- groups$minority
+  d <- pol$data
+  test_df <- d[d$fold__ == "test", ]
 
   v_treatment <- rlang::sym(pol$treatment)
   v_outcome <- rlang::sym(pol$outcome)
   risk_treatment <- ifelse(pol$risk_col == "resp_trt", 1, 0)
 
-  pol$data %>%
+  test_df %>%
     dplyr::filter(!!v_treatment == risk_treatment) %>%
     dplyr::group_by_(.dots = c(pol$grouping, controls)) %>%
     dplyr::summarize(hitrate = mean(!!v_outcome))

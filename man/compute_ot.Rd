@@ -4,18 +4,10 @@
 \alias{compute_ot}
 \title{Compute outcome tests for disparate impact of a policy}
 \usage{
-compute_ot(pol, base_group = NULL, minority_groups = NULL,
-  controls = NULL)
+compute_ot(pol, controls = NULL)
 }
 \arguments{
 \item{pol}{object of class policy}
-
-\item{base_group}{(Optional) single group that acts as the pivot/base; by
-default, if the grouping variable is a factor, set to the first level,
-otherwise set to the first of sorted unique values}
-
-\item{minority_groups}{(Optional) groups to compare to the base group; by
-default, set to every unique value other than the base group}
 
 \item{controls}{character vector of additional controls to consider (i.e.,
 conditional groupings)}
