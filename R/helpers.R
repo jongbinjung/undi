@@ -84,6 +84,40 @@ overwrite_list <- function(defaults, ...) {
   logit(pol$data[[paste0(pol$risk_col, "__")]])
 }
 
+#' Fit second stage model and extract disparate impact coefficient
+#'
+#' Given a data frame, treatment (cn_lhs), group (cn_tgt), additional controls
+#' (controls), and some function for predicting treatment given risk, group and
+#' additional controls, report the average odds ratio of treatment between
+#' groups. The first factor is treated as a baseline group to compare against.
+#'
+#' @param d data frame that has all columns referenced in cn_lhs, cn_tgt, and
+#'   controls
+#' @param cn_lhs name of column to use as LHS
+#' @param cn_tgt the target column of interest; should be a factor where the
+#'   first factor is considered the base group to compare against
+#' @param controls character vector of additional columns to control for
+#' @param fun function(data, ...) used to fit model
+#'
+#' @return tidy dataframe of the glm model
+.get_estimate <-
+  function(d,
+           cn_lhs,
+           cn_tgt,
+           controls = NULL,
+           fun = NULL) {
+  if (is.null(fun)) {
+    stop("Second-stage fitting function not specified")
+  }
+
+  f <- .make_formula(cn_lhs, c(controls, cn_tgt))
+  lbl_controls <- paste(c(cn_tgt, controls), collapse = ", ")
+  fun(f, d) %>%
+    broom::tidy() %>%
+    dplyr::mutate(controls = lbl_controls)
+  }
+
+
 #' Extract LHS, first element of RHS, and remainder of RHS from a formula
 #'
 #' Used for extracting relevant column names for features/grouping
