@@ -165,7 +165,7 @@ compute_ot <- function(pol,
 
       # TODO: estimate standard errors? (just create column of 0 for now)
       dplyr::tibble(term = paste0(rc$grouping, group),
-                    estimate = or,
+                    estimate = log(or),
                     std.error = 0,
                     ptrt_base = ptrt[1],
                     ptrt_minor = ptrt[2],
