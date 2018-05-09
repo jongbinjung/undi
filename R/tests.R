@@ -10,10 +10,14 @@
 #'   \code{\link{rad_control}} for fine-tuning
 #'
 #' @return tidy data frame with columns \item{term}{the group members considered
-#'   minority} \item{estimate}{the treatment ratio of each minority group over
-#'   base group} \item{std.error}{TO BE IMPLEMENTED! FOR NOW, ALL ZERO}
-#'   \item{ptrt_base/minor}{estimated average treatment probability for
-#'   base/minority groups} \item{controls}{features controlled for}
+#'   minority} \item{estimate}{log-odds of treatment, relative to base_group
+#'   (equivalent to logistic regression coefficient)}
+#'   \item{std.error}{coefficient standard errors for \code{*_coef} methods; TO
+#'   BE IMPLEMENTED for \code{*_avg} methods (FOR NOW, ALL ZERO)!}
+#'   \item{statistic/p.value}{(for \code{*_coef} methods) corresponding values
+#'   from model fit} \item{ptrt_base/minor}{(for \code{*_avg} methods) estimated
+#'   average treatment probability for base/minority groups} \item{method}{the
+#'   method used} \item{controls}{features controlled for}
 #'
 #' @inheritParams .validate_input
 #' @inheritParams rad_control
