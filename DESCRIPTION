@@ -20,7 +20,7 @@ Suggests:
     tidyverse
 Imports:
     broom,
-    dplyr,
+    dplyr (>= 0.7.3),
     forcats,
     foreach,
     gam,
@@ -29,7 +29,7 @@ Imports:
     glmnet,
     lazyeval,
     purrr,
-    rlang,
+    rlang (>= 0.2.0),
     ROCR,
     scales,
     sgd,
