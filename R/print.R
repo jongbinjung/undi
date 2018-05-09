@@ -45,9 +45,9 @@ print.policy <- function(x, ...) {
 #' @export
 print.sens <- function(x, ...) {
   tags <- x$results %>%
-    dplyr::group_by(term) %>%
-    dplyr::arrange(estimate, .by_group = TRUE) %>%
-    dplyr::pull("tag")
+    group_by(term) %>%
+    arrange(estimate, .by_group = TRUE) %>%
+    pull("tag")
 
   tag_length <- max(vapply(tags, nchar, FUN.VALUE = 0)) + 1
   ests <- format(x$results$estimate)

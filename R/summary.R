@@ -9,7 +9,7 @@
 summary.sens <- function(object, ...) {
   object$results %>%
     tidyr::separate(tag, into = c("group", "bound"), sep = "_") %>%
-    dplyr::select(term, estimate, bound) %>%
+    select(term, estimate, bound) %>%
     tidyr::spread(bound, estimate) %>%
-    dplyr::select(term, min, max)
+    select(term, min, max)
 }

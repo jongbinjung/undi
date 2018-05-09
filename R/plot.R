@@ -11,22 +11,20 @@
 plot.sens <- function(x, include_benchmark = TRUE, ...) {
   rad_ctls <- unique(x$results$controls)
   sens_pd <- x$results %>%
-    dplyr::group_by(term) %>%
-    dplyr::mutate(odds_ratio = estimate,
-                  ciub = estimate + 2 * std.error.naive,
-                  cilb = estimate - 2 * std.error.naive) %>%
-    dplyr::summarize(
-      ub = max(odds_ratio),
-      lb = min(odds_ratio),
-      ciub = max(ciub),
-      cilb = min(cilb)
-    )
+    group_by(term) %>%
+    mutate(odds_ratio = estimate,
+           ciub = estimate + 2 * std.error.naive,
+           cilb = estimate - 2 * std.error.naive) %>%
+    summarize(ub = max(odds_ratio),
+              lb = min(odds_ratio),
+              ciub = max(ciub),
+              cilb = min(cilb))
 
   base_pd <- x$base_case %>%
-    dplyr::filter(controls %in% rad_ctls) %>%
-    dplyr::mutate(odds_ratio = estimate,
-                  base_ciub = estimate + 2 * std.error.naive,
-                  base_cilb = estimate - 2 * std.error.naive)
+    filter(controls %in% rad_ctls) %>%
+    mutate(odds_ratio = estimate,
+           base_ciub = estimate + 2 * std.error.naive,
+           base_cilb = estimate - 2 * std.error.naive)
 
   pd <- merge(base_pd, sens_pd, by = "term")
 
@@ -34,11 +32,11 @@ plot.sens <- function(x, include_benchmark = TRUE, ...) {
     if ("bm" %in% x$base_case$method) {
       bm_pd <- x$base_case[!(x$base_case$controls %in% rad_ctls), ]
       bm_pd <- bm_pd %>%
-        dplyr::mutate(odds_ratio = exp(estimate),
-                      base_ciub = exp(estimate + 2 * std.error),
-                      base_cilb = exp(estimate - 2 * std.error))
+        mutate(odds_ratio = exp(estimate),
+               base_ciub = exp(estimate + 2 * std.error),
+               base_cilb = exp(estimate - 2 * std.error))
 
-      pd <- dplyr::bind_rows(bm_pd, pd)
+      pd <- bind_rows(bm_pd, pd)
 
       pd$controls <- forcats::fct_inorder(pd$controls)
     } else {
@@ -108,24 +106,24 @@ plot.policy <- function(x,
 
   # Risk calibration plots, conditioned on control/treatment
   calib_ctl_pd <- x$data %>%
-    dplyr::filter(as.numeric(!!v_treatment) == 0, fold__ == "test") %>%
-    dplyr::mutate(risk_bin = dplyr::ntile(resp_ctl__, 10)) %>%
-    dplyr::group_by(risk_bin, !!v_group) %>%
-    dplyr::summarize(N = n(),
-                     pout = mean(!!v_outcome),
-                     mresp = mean(resp_ctl__)) %>%
-    dplyr::mutate(type = sprintf("Outcome given %s = 0", s_treatment))
+    filter(as.numeric(!!v_treatment) == 0, fold__ == "test") %>%
+    mutate(risk_bin = ntile(resp_ctl__, 10)) %>%
+    group_by(risk_bin, !!v_group) %>%
+    summarize(N = n(),
+              pout = mean(!!v_outcome),
+              mresp = mean(resp_ctl__)) %>%
+    mutate(type = sprintf("Outcome given %s = 0", s_treatment))
 
   calib_trt_pd <- x$data %>%
-    dplyr::filter(as.numeric(!!v_treatment) == 1, fold__ == "test") %>%
-    dplyr::mutate(risk_bin = dplyr::ntile(resp_trt__, 10)) %>%
-    dplyr::group_by(risk_bin, !!v_group) %>%
-    dplyr::summarize(N = n(),
-                     pout = mean(!!v_outcome),
-                     mresp = mean(resp_trt__)) %>%
-    dplyr::mutate(type = sprintf("Outcome given %s = 1", s_treatment))
+    filter(as.numeric(!!v_treatment) == 1, fold__ == "test") %>%
+    mutate(risk_bin = ntile(resp_trt__, 10)) %>%
+    group_by(risk_bin, !!v_group) %>%
+    summarize(N = n(),
+              pout = mean(!!v_outcome),
+              mresp = mean(resp_trt__)) %>%
+    mutate(type = sprintf("Outcome given %s = 1", s_treatment))
 
-  calib_pd <- dplyr::bind_rows(calib_ctl_pd, calib_trt_pd)
+  calib_pd <- bind_rows(calib_ctl_pd, calib_trt_pd)
 
   p_calib <- ggplot(calib_pd, aes(x = mresp, y = pout)) +
     geom_abline(intercept = 0, slope = 1, size = 2,
@@ -171,11 +169,10 @@ plot.sensitive_policy <- function(x,
   v_treatment <- rlang::sym(s_treatment)
   v_riskcol <- rlang::sym(x$risk_col)
 
-  vanilla_df <- .down_sample(x$data %>% dplyr::group_by(!!v_group),
+  vanilla_df <- .down_sample(x$data %>% group_by(!!v_group),
                              down_sample,
                              verbose = FALSE) %>%
-    dplyr::mutate(weights__ = 1, type = "Original",
-                  !!v_treatment := ptrt__)
+    mutate(weights__ = 1, type = "Original", !!v_treatment := ptrt__)
 
   caption <- paste0("Points are down-sampled to ", nrow(vanilla_df), "/",
                     nrow(x$data), " rows (",
@@ -184,17 +181,17 @@ plot.sensitive_policy <- function(x,
   sampled_ids <- vanilla_df$id_sens__
 
   sens_df <- x$sens_data %>%
-    dplyr::filter(id_sens__ %in% sampled_ids) %>%
-    dplyr::mutate(type = "Sensitized")
+    filter(id_sens__ %in% sampled_ids) %>%
+    mutate(type = "Sensitized")
 
   pd <- rbind(x$data %>%
-                dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
-                              !!x$grouping, risk__, ptrt__) %>%
-                dplyr::mutate(weights__ = 1, type = "Original"),
+                select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                       !!x$grouping, risk__, ptrt__) %>%
+                mutate(weights__ = 1, type = "Original"),
               x$sens_data %>%
-                dplyr::select(!!x$treatment, !!paste0(x$risk_col, "__"),
+                select(!!x$treatment, !!paste0(x$risk_col, "__"),
                               !!x$grouping, risk__, ptrt__, weights__) %>%
-                dplyr::mutate(type = "Sensitized"))
+                mutate(type = "Sensitized"))
 
   # Risk vs. treatment
   ret <-

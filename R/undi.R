@@ -6,9 +6,8 @@
 #' @docType package
 #' @name undi
 #' @import rnr
+#' @import dplyr
 #' @import ggplot2
-#' @importFrom dplyr %>%
-#' @importFrom dplyr n
 #' @importFrom foreach %:%
 #' @importFrom foreach %dopar%
 #' @importFrom foreach foreach

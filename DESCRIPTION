@@ -8,6 +8,7 @@ Description: Test for unjustified disparate impact given decision,
     outcome, and covariates.
 Depends: 
     R (>= 3.4.0),
+    dplyr (>= 0.7.3),
     rnr (>= 0.2.1)
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
@@ -20,7 +21,6 @@ Suggests:
     tidyverse
 Imports:
     broom,
-    dplyr (>= 0.7.3),
     forcats,
     foreach,
     gam,

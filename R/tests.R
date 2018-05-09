@@ -134,9 +134,9 @@ compute_ot <- function(pol,
   risk_treatment <- ifelse(pol$risk_col == "resp_trt", 1, 0)
 
   test_df %>%
-    dplyr::filter(!!v_treatment == risk_treatment) %>%
-    dplyr::group_by_(.dots = c(pol$grouping, controls)) %>%
-    dplyr::summarize(hitrate = mean(!!v_outcome), count = n())
+    filter(!!v_treatment == risk_treatment) %>%
+    group_by_(.dots = c(pol$grouping, controls)) %>%
+    summarize(hitrate = mean(!!v_outcome), count = n())
 }
 
 #' Given a data frame and \code{\link{rad_control} object}, compute RAD estimate
@@ -172,7 +172,7 @@ compute_ot <- function(pol,
     if (rc$method == "coef") {
       coefs <- m %>%
         broom::tidy() %>%
-        dplyr::mutate(method = rc$method, controls = rc$label)
+        mutate(method = rc$method, controls = rc$label)
 
       coefs[grepl(rc$grouping, coefs$term), ]
     } else if (rc$method == "avg") {
@@ -190,7 +190,7 @@ compute_ot <- function(pol,
       or <- odds[2]/odds[1]
 
       # TODO: estimate standard errors? (just create column of 0 for now)
-      dplyr::tibble(term = paste0(rc$grouping, group),
+      tibble(term = paste0(rc$grouping, group),
                     estimate = log(or),
                     std.error = 0,
                     ptrt_base = ptrt[1],

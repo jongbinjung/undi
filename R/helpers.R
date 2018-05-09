@@ -114,7 +114,7 @@ overwrite_list <- function(defaults, ...) {
   lbl_controls <- paste(c(cn_tgt, controls), collapse = ", ")
   fun(f, d) %>%
     broom::tidy() %>%
-    dplyr::mutate(controls = lbl_controls)
+    mutate(controls = lbl_controls)
   }
 
 
@@ -255,9 +255,9 @@ overwrite_list <- function(defaults, ...) {
   }
 
   if (n < 1) {
-    ret <- dplyr::sample_frac(d, size = n)
+    ret <- sample_frac(d, size = n)
   } else {
-    ret <- dplyr::sample_n(d, size = n)
+    ret <- sample_n(d, size = n)
   }
 
   if (verbose) {

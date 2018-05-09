@@ -156,25 +156,25 @@ optimsens <-
   # Generate initial values
   # TODO(jongbin): Allow the user to specify initial values?
   params_init <- foreach(minor = minority_groups,
-                         .combine = dplyr::bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = dplyr::bind_rows) %dopar% {
+                         .combine = bind_rows) %:%
+    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
       tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
 
       init_ <- stats::runif(length(params_lower),
                             min = params_lower,
                             max = params_upper)
 
-      dplyr::tibble(tag = tag_,  params = list(init_))
+      tibble(tag = tag_,  params = list(init_))
   }
 
   # Optimize for min/max over each minority group
   optim_res <- foreach(minor = minority_groups,
-                       .combine = dplyr::bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = dplyr::bind_rows) %dopar% {
+                       .combine = bind_rows) %:%
+    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
       tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
       pars <- params_init %>%
-        dplyr::filter(tag == tag_) %>%
-        dplyr::pull("params") %>%
+        filter(tag == tag_) %>%
+        pull("params") %>%
         `[[`(1)
 
       opt = stats::optim(
@@ -205,19 +205,19 @@ optimsens <-
         pars[!free_params],
         !is.null(range_q_ratio)))
 
-      dplyr::tibble(minor = minor,
-                    tag = tag_,
-                    optim = list(opt))
+      tibble(minor = minor,
+             tag = tag_,
+             optim = list(opt))
     }
 
   # Extract final results from optimized parameters
   coefs <-
-    foreach(ip = 1:nrow(optim_res), .combine = dplyr::bind_rows) %dopar% {
+    foreach(ip = 1:nrow(optim_res), .combine = bind_rows) %dopar% {
     minor <- optim_res[ip, ][["minor"]]
     tag_ <- optim_res[ip, ][["tag"]]
     params <- optim_res[ip, ] %>%
-      dplyr::mutate(pars = purrr::map(optim, "par")) %>%
-      dplyr::pull("pars") %>%
+      mutate(pars = purrr::map(optim, "par")) %>%
+      pull("pars") %>%
       `[[`(1)
 
     fn <- .get_optim_fn(pol, sgn = sgn,
@@ -227,13 +227,13 @@ optimsens <-
     ret <- fn(params)
 
     ret <- ret %>%
-      dplyr::mutate(tag = tag_,
-                    pars = list(params))
+      mutate(tag = tag_,
+             pars = list(params))
 
     ret
     }
 
-  base_case <- dplyr::bind_rows(
+  base_case <- bind_rows(
     lapply(
       minority_groups,
       function(group) {
@@ -244,7 +244,7 @@ optimsens <-
   base_case$method <- "rad"
 
   if (include_benchmark) {
-    base_bm <-  dplyr::bind_rows(
+    base_bm <-  bind_rows(
       compute_bm(pol,
                  base_group = base_group,
                  minority_groups = minority_groups),
@@ -257,7 +257,7 @@ optimsens <-
     )
     base_bm$method <- "bm"
 
-    base_case <- dplyr::bind_rows(base_bm, base_case)
+    base_case <- bind_rows(base_bm, base_case)
   }
 
   ret <- list(
@@ -392,10 +392,10 @@ gridsens <-
 
   # Optimize for min/max over each minority group
   grid_res <- foreach(ip = 1:nrow(params_grid),
-                      .combine = dplyr::bind_rows,
+                      .combine = bind_rows,
                       .multicombine = TRUE) %:%
     foreach(minor = minority_groups,
-            .combine = dplyr::bind_rows,
+            .combine = bind_rows,
             .multicombine = TRUE) %dopar% {
       params <- params_grid[ip, ]
 
@@ -415,23 +415,23 @@ gridsens <-
         naive_se = FALSE,
         verbose = FALSE
         ) %>%
-        dplyr::mutate(pars = list(params), minor = minor)
+        mutate(pars = list(params), minor = minor)
   }
 
   grid_opt <- grid_res %>%
-    dplyr::group_by(term, controls) %>%
-    dplyr::mutate(max = max(estimate), min = min(estimate)) %>%
-    dplyr::filter(estimate == max | estimate == min) %>%
+    group_by(term, controls) %>%
+    mutate(max = max(estimate), min = min(estimate)) %>%
+    filter(estimate == max | estimate == min) %>%
     # Remove duplicate maxima/minima (by selecting top-most result)
-    dplyr::group_by(estimate, add = TRUE) %>%
-    dplyr::slice(1) %>%
-    dplyr::mutate(tag = paste(minor, ifelse(estimate == max, "max", "min"), sep = "_"))
+    group_by(estimate, add = TRUE) %>%
+    slice(1) %>%
+    mutate(tag = paste(minor, ifelse(estimate == max, "max", "min"), sep = "_"))
 
   # Extract final results from optimized parameters
   coefs <-
-    foreach(ip = 1:nrow(grid_opt), .combine = dplyr::bind_rows) %dopar% {
+    foreach(ip = 1:nrow(grid_opt), .combine = bind_rows) %dopar% {
     params <- grid_opt[ip, ] %>%
-      dplyr::pull("pars") %>%
+      pull("pars") %>%
       `[[`(1)
 
     minor <- grid_opt[ip, ]$minor
@@ -449,13 +449,13 @@ gridsens <-
       fit_fn = fit_fn,
       verbose = FALSE
       ) %>%
-      dplyr::mutate(pars = list(params))
+      mutate(pars = list(params))
 
     ret$tag <- tag
     ret
     }
 
-  base_case <- dplyr::bind_rows(
+  base_case <- bind_rows(
     lapply(
       minority_groups,
       function(group) {
@@ -467,7 +467,7 @@ gridsens <-
   base_case$method <- "rad"
 
   if (include_benchmark) {
-    base_bm <-  dplyr::bind_rows(
+    base_bm <-  bind_rows(
       compute_bm(pol,
                  base_group = base_group,
                  minority_groups = minority_groups),
@@ -480,7 +480,7 @@ gridsens <-
     )
     base_bm$method <- "bm"
 
-    base_case <- dplyr::bind_rows(base_bm, base_case)
+    base_case <- bind_rows(base_bm, base_case)
   }
 
   ret <- list(
@@ -646,7 +646,7 @@ gridsens <-
         d1 = d1s
       )
     params_grid <- purrr::cross_df(params_list) %>%
-      dplyr::mutate(
+      mutate(
         ab = dp,
         am = dp,
         d0b = d0,
@@ -654,20 +654,20 @@ gridsens <-
         d1b = d1,
         d1m = d1
       ) %>%
-      dplyr::select(-dp,-d0,-d1)
+      select(-dp,-d0,-d1)
   }
 
   # TODO(jongbin): Better way of filtering "insignificant" parameter combos?
   params_grid <- params_grid %>%
-    dplyr::mutate(
+    mutate(
       maxparam = pmax(ab, am, d0b, d0m, d1b, d1m),
       minq = pmin(qb, qm),
       maxq = pmax(qb, qm)
     ) %>%
-    dplyr::filter(maxparam != 0,
-                  minq != 1,
-                  maxq != 0) %>%
-    dplyr::select(-maxparam,-minq,-maxq)
+    filter(maxparam != 0,
+           minq != 1,
+           maxq != 0) %>%
+    select(-maxparam,-minq,-maxq)
 
 
   return(params_grid)

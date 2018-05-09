@@ -98,8 +98,8 @@ sensitivity <-
     naive_coefs <- .compute_estimate(d = od, rc)
 
     naive_coefs <- naive_coefs[, c("term", "std.error")] %>%
-      dplyr::mutate(controls = paste(c(pol$grouping, "risk__", controls),
-                                     collapse = ", "))
+      mutate(controls = paste(c(pol$grouping, "risk__", controls),
+                              collapse = ", "))
   }
 
   sens_pol <- sensitize(pol, q = q, dp = dp, d0 = d0, d1 = d1,
@@ -121,7 +121,7 @@ sensitivity <-
     }
   }
 
-  d_ <- dplyr::filter(d, weights__ != 0)
+  d_ <- filter(d, weights__ != 0)
 
   coefs <- .compute_estimate(d = d_, rc = rc, weighted = TRUE)
 
@@ -282,8 +282,8 @@ sensitize.policy <-
 
   new_d <- sensitize(d, q = qs, dp = dps, d0 = d0s, d1 = d1s, debug = TRUE)
 
-  df_ <- dplyr::bind_rows(new_d %>% dplyr::mutate(u = 0),
-                          new_d %>% dplyr::mutate(u = 1))
+  df_ <- bind_rows(new_d %>% mutate(u = 0),
+                          new_d %>% mutate(u = 1))
 
   df_[[obj$treatment]] <- ifelse(df_$u == 0, df_$ptrt_u0__, df_$ptrt_u1__)
 

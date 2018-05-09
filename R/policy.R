@@ -136,15 +136,15 @@ policy <-
 
         # Randomly assigned train/test splits stratified by treatment, group and outcome
         data <- data %>%
-          dplyr::group_by(!!as.name(treatment),
-                          !!as.name(grouping),
-                          !!as.name(outcome)) %>%
-          dplyr::mutate(fold__ = sample(c(
+          group_by(!!as.name(treatment),
+                   !!as.name(grouping),
+                   !!as.name(outcome)) %>%
+          mutate(fold__ = sample(c(
             rep('train', ceiling(train * n())),
             rep('test', n() - ceiling(train * n()))
           ),
           size = n())) %>%
-          dplyr::ungroup()
+          ungroup()
 
       } else if (is.character(train)) {
         # TODO(jongbin): Check that specified column is "proper"
