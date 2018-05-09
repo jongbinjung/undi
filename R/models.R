@@ -89,11 +89,7 @@ rad_control <-
             stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
           }
         },
-        pred = function(m, d) {
-          stats::predict.glm(object = m,
-                             newdata = d,
-                             type = "response")
-        },
+        pred = function() stop("Never call pred() on a coef method for rad!"),
         method = "coef"
       )
     },
