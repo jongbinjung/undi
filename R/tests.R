@@ -111,10 +111,36 @@ compute_bm <-
   }
 
 
+
+#' Compute outcome tests for disparate impact of a policy
+#'
+#' @param controls character vector of additional controls to consider (i.e.,
+#'   conditional groupings)
+#'
+#' @return data frame, grouped by the group and additional columns specified in
+#'   the \code{controls} arguments and corresponding \code{hitrate}, i.e.,
+#'   \code{P(outcome = 1 | treatment = risk_treatment)}, where
+#'   \code{risk_treatment = ifelse(pol$risk_col == "resp_trt", 1, 0)}.
+#'
+#' @inheritParams .validate_input
+#' @export
 compute_ot <- function(pol,
                        base_group = NULL,
-                       minority_groups = NULL) {
+                       minority_groups = NULL,
+                       controls = NULL) {
+  # Input validation
+  groups <- .validate_input(pol, base_group, minority_groups)
+  base_group <- groups$base
+  minority_groups <- groups$minority
 
+  v_treatment <- rlang::sym(pol$treatment)
+  v_outcome <- rlang::sym(pol$outcome)
+  risk_treatment <- ifelse(pol$risk_col == "resp_trt", 1, 0)
+
+  pol$data %>%
+    dplyr::filter(!!v_treatment == risk_treatment) %>%
+    dplyr::group_by_(.dots = c(pol$grouping, controls)) %>%
+    dplyr::summarize(hitrate = mean(!!v_outcome))
 }
 
 #' Given a data frame and \code{\link{rad_control} object}, compute RAD estimate
