@@ -136,7 +136,7 @@ compute_ot <- function(pol,
   test_df %>%
     dplyr::filter(!!v_treatment == risk_treatment) %>%
     dplyr::group_by_(.dots = c(pol$grouping, controls)) %>%
-    dplyr::summarize(hitrate = mean(!!v_outcome))
+    dplyr::summarize(hitrate = mean(!!v_outcome), count = n())
 }
 
 #' Given a data frame and \code{\link{rad_control} object}, compute RAD estimate
