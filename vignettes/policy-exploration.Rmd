@@ -1,0 +1,109 @@
+---
+title: "Policy exploration"
+author: "Jongbin Jung"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Policy exploration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r pkgs, message=FALSE}
+# Load necessary packages
+library(tidyverse)
+library(undi)
+```
+
+The purpose of `undi` is to analyze possibilities of (unjustified) disparate
+impact, within the context of a policy. The basic requirements of a policy are
+(1) an action taken upon each unit (e.g., requiring bail for defendants or
+deciding to frisk an individual) and 
+(2) a clear outcome of interest (e.g., whether a defendant fails to appear for a
+future court date, or whether the individual is carrying an illegal weapon)[^binary].
+
+[^binary]: For now, `undi` only deals with policies that have binary decisions and binary outcomes.
+
+In addition to an action and outcome, analysis of disparate impact requires the
+definition of some group (e.g., race or gender) for which we would like to
+measure the possibility of disparate impact.
+
+
+# The setup
+
+For illustration, we generate data from a (fictional) policy. The united nations
+of M&M's (yes, the candy) have recently enacted a "Nuts in my backyard" policy,
+which aims to reduce the population of potentially fatal peanut M&M's.
+As part of this effort, the M&M's police department (MMPD) were given the
+authority to stop, question, and slice pedestrian M&M's highly suspected of
+containing peanuts.
+Many attributes of M&M's, such as size or visible crack in coating, are
+indicitive of being of the peanut variety. And while certain colors are indeed
+more likely to be peanut M&M's, it is unclear whether the policy has unjustified
+disparate impact on certain colors of M&M's.
+
+```{r}
+inv_logit <- stats::binomial()$linkinv
+logit <- stats::binomial()$linkfun
+
+N <- 3000
+
+set.seed(1)
+data <- tibble(id = rep(1:N)) %>%
+  mutate(color = factor(sample(c("yellow", "blue", "red", "other"), 
+                               N, replace = TRUE, prob = c(.15, .45, .35, .05))), 
+    color = fct_relevel(color, "yellow"),
+    size = rnorm(N, 0, 1),
+    # yellow M&M's are systematically less-likely to have a crack
+    p_crack = ifelse(color == "yellow", 0.1, 0.15),
+    has_cracks = rbinom(N, 1, p_crack),
+    # noise
+    e_risk = rnorm(N, 0, .1),
+    # risk of being peanut M&M's is a function of size/cracks/color
+    risk = size + 2*has_cracks + 
+      # blue and red colors are more likely to have peanuts 
+      0.5 * (color == "blue") + 0.5 * (color == "red") + e_risk,  
+    # MMPD actually slice blue M&M's at a higher rate 
+    p_slice = inv_logit(risk + 0.2*(color == "blue")), 
+    # MMPD slices 20% of the population, after adjusting for colorism
+    slice = p_slice >= quantile(p_slice, .2) , 
+    # slice = inv_logit(p_slice) > runif(n()), 
+    # The actual outcome is only observed for sliced M&M's 
+    has_peanut = ifelse(slice, inv_logit(risk) > runif(n()), FALSE))
+```
+
+## Fitting the policy
+
+In this setting, the unit of analysis is each inidividual candy.
+The treatment decision is weather or not to slice each candy, 
+the outcome (response) is whether the candy contains peanuts, and `color` is the
+group of interest.
+Note that we only observe weather each M&M's contains peanuts if it is sliced,
+i.e.,  the response given control is always 0.
+
+```{r policy fit}
+pol <- policy(slice ~ color + size + has_cracks,
+              data,
+              model = "glm",
+              outcome = "has_peanut", 
+              resp_ctl = 0)
+plot(pol)
+```
+
+First, we can compute regular benchmark tests
+```{r benchmark test}
+compute_bm(pol, base_group = "yellow", minority_groups = c("blue", "red"))
+compute_bm(pol, base_group = "yellow", minority_groups = c("blue", "red"), kitchen_sink = TRUE)
+```
+
+We can use the estimated risk scores to measure risk-adjusted disparate impact (rad)
+```{r rad}
+compute_rad(pol, base_group = "yellow", minority_groups = c("blue", "red"))
+```
