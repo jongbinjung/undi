@@ -222,3 +222,21 @@ test_that(".compute_auc returns .5 for single-value predictors", {
   generated <- .compute_auc(preds, labels, ret_num = TRUE)
   expect_equal(generated, .5)
 })
+
+
+# Test .get_groups() ------------------------------------------------------
+test_that(".get_groups() returns unique() for regular column", {
+  sample_col <- sample(c("A", "B", "C", "D"), size = 20, replace = TRUE)
+  expected <- unique(sample_col)
+  generated <- .get_groups(sample_col)
+  expect_equal(generated, expected)
+})
+
+test_that(".get_groups() returns levels() for factors", {
+  sample_col <- factor(sample(c("A", "B", "C", "D"), size = 20, replace = TRUE))
+  expected <- levels(sample_col)
+  generated <- .get_groups(sample_col)
+  expect_equal(generated, expected)
+})
+
+
