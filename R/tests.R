@@ -46,11 +46,11 @@ compute_rad <-
     test_df <- .down_sample(d[d$fold__ == "test", ], down_sample)
 
     # Make sure that the base_group is first level
+    # (see @details of .compute_estimate)
     test_df[[pol$grouping]] <- forcats::fct_relevel(test_df[[pol$grouping]],
                                                     base_group)
 
     ret <- .compute_estimate(test_df, rc, ...)
-
     return(ret)
   }
 
@@ -119,12 +119,14 @@ compute_ot <- function(pol,
 #' @param rc a \code{\link{rad_control}} object
 #' @param ... additional arguments passed to \code{rc$fit} function
 #'
-#' @return tidy dataframe of estimated results
-.compute_estimate <-
-  function(d,
-           rc,
-           weighted = FALSE,
-           ...) {
+#' @details This helper method relies on the proper factoring of data \code{d}.
+#'   The grouping variable is extracted from \code{rc$grouping}, while the
+#'   \code{base_group} and \code{minority_groups} are determined by the levels
+#'   ordering in \code{d[[rc$grouping]]}, i.e., make sure groups are properly
+#'   ordered before calling!
+#'
+#' @return tidy dataframe of estimated rad results
+.compute_estimate <- function(d,  rc, weighted = FALSE, ...) {
   # Fit model
   groups <- .get_groups(d[[rc$grouping]])
   base_group <- groups[1]
@@ -144,7 +146,7 @@ compute_ot <- function(pol,
     if (rc$method == "coef") {
       coefs <- m %>%
         broom::tidy() %>%
-        dplyr::mutate(controls = rc$label)
+        dplyr::mutate(method = rc$method, controls = rc$label)
 
       coefs[grepl(rc$grouping, coefs$term), ]
     } else if (rc$method == "avg") {
@@ -158,16 +160,17 @@ compute_ot <- function(pol,
         }
       })
 
-      trt_ratio <- ptrt[2]/ptrt[1]
+      odds <- ptrt / (1 - ptrt)
+      or <- odds[2]/odds[1]
 
       # TODO: estimate standard errors? (just create column of 0 for now)
       dplyr::tibble(term = paste0(rc$grouping, group),
-                    estimate = trt_ratio,
+                    estimate = or,
                     std.error = 0,
                     ptrt_base = ptrt[1],
                     ptrt_minor = ptrt[2],
+                    method = rc$method,
                     controls = rc$label)
-
     } else {
       stop("Unknown method specification from rad_control:", rc$method)
     }
