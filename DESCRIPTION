@@ -22,7 +22,7 @@ Suggests:
 Imports:
     broom,
     forcats,
-    foreach,
+    furrr,
     gam,
     gbm,
     ggplot2,

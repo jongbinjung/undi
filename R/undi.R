@@ -8,9 +8,6 @@
 #' @import rnr
 #' @import dplyr
 #' @import ggplot2
-#' @importFrom foreach %:%
-#' @importFrom foreach %dopar%
-#' @importFrom foreach foreach
 #' @importFrom rlang !!
 NULL
 
@@ -30,6 +27,7 @@ if(getRversion() >= "2.15.1")
       "maxparam",
       "maxq",
       "minq",
+      "minor",
       "qb",
       "qm",
       "risk_bin",

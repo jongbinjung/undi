@@ -153,85 +153,94 @@ optimsens <-
     }
   }
 
+  # Create grid of min/max option and minority groups for iteration
+  iter_grid <- list(minor = minority_groups,
+                    sgn = c(-1, 1)) %>%
+    purrr::cross_df() %>%
+    distinct()
+
   # Generate initial values
   # TODO(jongbin): Allow the user to specify initial values?
-  params_init <- foreach(minor = minority_groups,
-                         .combine = bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
-      tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
+  params_init <- furrr::future_map_dfr(1:nrow(iter_grid),
+                                       function(ip) {
+    it <- iter_grid[ip, ]
 
-      init_ <- stats::runif(length(params_lower),
-                            min = params_lower,
-                            max = params_upper)
+    tag_ <- paste(it$minor, ifelse(it$sgn > 0, "min", "max"), sep = "_")
 
-      tibble(tag = tag_,  params = list(init_))
-  }
+    init_ <- stats::runif(length(params_lower),
+                          min = params_lower,
+                          max = params_upper)
+
+    tibble(tag = tag_,  params = list(init_))
+  })
 
   # Optimize for min/max over each minority group
-  optim_res <- foreach(minor = minority_groups,
-                       .combine = bind_rows) %:%
-    foreach(sgn = c(-1, 1), .combine = bind_rows) %dopar% {
-      tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
-      pars <- params_init %>%
-        filter(tag == tag_) %>%
-        pull("params") %>%
-        `[[`(1)
+  optim_res <- furrr::future_map_dfr(1:nrow(iter_grid),
+                                     function(ip) {
+    it <- iter_grid[ip, ]
+    minor <- it$minor
+    sgn <- it$sgn
+    tag_ <- paste(minor, ifelse(sgn > 0, "min", "max"), sep = "_")
+    pars <- params_init %>%
+      filter(tag == tag_) %>%
+      pull("params") %>%
+      `[[`(1)
 
-      opt = stats::optim(
-        pars[free_params],
-        .get_optim_fn(
-          pol,
-          sgn = sgn,
-          free_params = free_params,
-          fixed_param_values = pars[!free_params],
-          compare = c(base_group, minor),
-          tag = tag_,
-          q_range = !is.null(range_q_ratio),
-          allow_sgv = allow_sgv,
-          controls = controls,
-          fit_fn = fit_fn,
-          naive_se = FALSE,
-          verbose = verbose
-        ),
-        lower = params_lower[free_params],
-        upper = params_upper[free_params],
-        method = 'L-BFGS-B',
-        control = optim_control
-      )
+    opt = stats::optim(
+      pars[free_params],
+      .get_optim_fn(
+        pol,
+        sgn = sgn,
+        free_params = free_params,
+        fixed_param_values = pars[!free_params],
+        compare = c(base_group, minor),
+        tag = tag_,
+        q_range = !is.null(range_q_ratio),
+        allow_sgv = allow_sgv,
+        controls = controls,
+        fit_fn = fit_fn,
+        naive_se = FALSE,
+        verbose = verbose
+      ),
+      lower = params_lower[free_params],
+      upper = params_upper[free_params],
+      method = 'L-BFGS-B',
+      control = optim_control
+    )
 
-      # Convert parameters back to 8-D vector
-      opt$par = unlist(.extract_params(
-        opt$par, free_params,
-        pars[!free_params],
-        !is.null(range_q_ratio)))
+    # Convert parameters back to 8-D vector
+    opt$par = unlist(.extract_params(
+      opt$par, free_params,
+      pars[!free_params],
+      !is.null(range_q_ratio)))
 
-      tibble(minor = minor,
-             tag = tag_,
-             optim = list(opt))
-    }
+    tibble(minor = minor,
+           tag = tag_,
+           optim = list(opt))
+  })
 
   # Extract final results from optimized parameters
   coefs <-
-    foreach(ip = 1:nrow(optim_res), .combine = bind_rows) %dopar% {
-    minor <- optim_res[ip, ][["minor"]]
-    tag_ <- optim_res[ip, ][["tag"]]
-    params <- optim_res[ip, ] %>%
-      mutate(pars = purrr::map(optim, "par")) %>%
-      pull("pars") %>%
-      `[[`(1)
+    furrr::future_map_dfr(1:nrow(optim_res), function(ip) {
+      minor <- optim_res[ip, ][["minor"]]
+      tag_ <- optim_res[ip, ][["tag"]]
+      params <- optim_res[ip, ] %>%
+        mutate(pars = purrr::map(optim, "par")) %>%
+        pull("pars") %>%
+        `[[`(1)
 
-    fn <- .get_optim_fn(pol, sgn = sgn,
-                        compare = c(base_group, minor),
-                        controls = controls, naive_se = TRUE,
-                        return_scalar = FALSE)
-    ret <- fn(params)
+      fn <- .get_optim_fn(pol, sgn = sgn,
+                          compare = c(base_group, minor),
+                          controls = controls, naive_se = TRUE,
+                          return_scalar = FALSE)
+      ret <- fn(params)
 
-    ret <- ret %>%
-      mutate(tag = tag_,
-             pars = list(params))
+      ret <- ret %>%
+        mutate(tag = tag_,
+               pars = list(params))
 
-    ret
-    }
+      ret
+    })
 
   base_case <- bind_rows(
     lapply(
@@ -350,8 +359,29 @@ gridsens <-
                  pol$grouping))
   }
 
+  if (is.null(base_group)) {
+    if (is.factor(group_col)) {
+      base_group <- levels(group_col)[1]
+    } else {
+      base_group <- unique(group_col)[1]
+    }
+  }
+
+  if (is.null(minority_groups)) {
+    if (is.factor(group_col)) {
+      minority_groups <- levels(group_col)[-1]
+    } else {
+      minority_groups <- unique(group_col)[-1]
+    }
+  }
+
   if (is.null(params_grid)) {
-    params_grid <- .get_params_grid(qs, dps, d0s, d1s, allow_sgv)
+    params_grid <- .get_params_grid(qs,
+                                    dps,
+                                    d0s,
+                                    d1s,
+                                    minority_groups,
+                                    allow_sgv)
   } else {
     # Check params_grid for validity
     if (is.null(params_grid$qb) ||
@@ -374,29 +404,10 @@ gridsens <-
     }
   }
 
-  if (is.null(base_group)) {
-    if (is.factor(group_col)) {
-      base_group <- levels(group_col)[1]
-    } else {
-      base_group <- unique(group_col)[1]
-    }
-  }
-
-  if (is.null(minority_groups)) {
-    if (is.factor(group_col)) {
-      minority_groups <- levels(group_col)[-1]
-    } else {
-      minority_groups <- unique(group_col)[-1]
-    }
-  }
-
   # Optimize for min/max over each minority group
-  grid_res <- foreach(ip = 1:nrow(params_grid),
-                      .combine = bind_rows,
-                      .multicombine = TRUE) %:%
-    foreach(minor = minority_groups,
-            .combine = bind_rows,
-            .multicombine = TRUE) %dopar% {
+  grid_res <- furrr::future_map_dfr(1:nrow(params_grid),
+                                    .progress = verbose,
+                                    function(ip) {
       params <- params_grid[ip, ]
 
       if (verbose >= 2) {
@@ -405,7 +416,7 @@ gridsens <-
 
       ret <- sensitivity(
         pol,
-        compare = c(base_group, minor),
+        compare = c(base_group, params$minority),
         q = c(params$qb, params$qm),
         dp = c(params$ab, params$am),
         d0 = c(params$d0b, params$d0m),
@@ -415,8 +426,8 @@ gridsens <-
         naive_se = FALSE,
         verbose = FALSE
         ) %>%
-        mutate(pars = list(params), minor = minor)
-  }
+        mutate(pars = list(params), minor = params$minority)
+    })
 
   grid_opt <- grid_res %>%
     group_by(term, controls) %>%
@@ -428,8 +439,7 @@ gridsens <-
     mutate(tag = paste(minor, ifelse(estimate == max, "max", "min"), sep = "_"))
 
   # Extract final results from optimized parameters
-  coefs <-
-    foreach(ip = 1:nrow(grid_opt), .combine = bind_rows) %dopar% {
+  coefs <- furrr::future_map_dfr(1:nrow(grid_opt), function(ip) {
     params <- grid_opt[ip, ] %>%
       pull("pars") %>%
       `[[`(1)
@@ -453,7 +463,7 @@ gridsens <-
 
     ret$tag <- tag
     ret
-    }
+  })
 
   base_case <- bind_rows(
     lapply(
@@ -622,10 +632,11 @@ gridsens <-
 #'
 #' @return data frame where each row represents a unique combination of possible
 #'   parameter values
-.get_params_grid <- function(qs, dps, d0s, d1s, allow_sgv) {
+.get_params_grid <- function(qs, dps, d0s, d1s, mg, allow_sgv) {
   if (allow_sgv) {
     params_list <-
       list(
+        minority = mg,
         qb = qs,
         qm = qs,
         ab = dps,
@@ -639,6 +650,7 @@ gridsens <-
   } else {
     params_list <-
       list(
+        minority = mg,
         qb = qs,
         qm = qs,
         dp = dps,
@@ -667,8 +679,8 @@ gridsens <-
     filter(maxparam != 0,
            minq != 1,
            maxq != 0) %>%
-    select(-maxparam,-minq,-maxq)
-
+    select(-maxparam,-minq,-maxq) %>%
+    distinct()
 
   return(params_grid)
 }
