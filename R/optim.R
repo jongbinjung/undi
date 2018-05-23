@@ -404,32 +404,32 @@ gridsens <-
     }
   }
 
+  pg <- params_grid
+
   # Optimize for min/max over each minority group
-  grid_res <- furrr::future_map_dfr(1:nrow(params_grid),
+  grid_res <- furrr::future_map_dfr(1:nrow(pg),
                                     .progress = verbose,
                                     function(ip) {
-      params <- params_grid[ip, ]
-
       if (verbose >= 2) {
-        cat(sprintf("grid: %s\n", .format_pars(params)))
+        cat(sprintf("grid: %s\n", .format_pars(pg[ip, ])))
       }
 
-      ret <- sensitivity(
+      sensitivity(
         pol,
-        compare = c(base_group, params$minority),
-        q = c(params$qb, params$qm),
-        dp = c(params$ab, params$am),
-        d0 = c(params$d0b, params$d0m),
-        d1 = c(params$d1b, params$d1m),
+        compare = c(base_group, pg[ip, ]$minority),
+        q = c(pg[ip, ]$qb, pg[ip, ]$qm),
+        dp = c(pg[ip, ]$ab, pg[ip, ]$am),
+        d0 = c(pg[ip, ]$d0b, pg[ip, ]$d0m),
+        d1 = c(pg[ip, ]$d1b, pg[ip, ]$d1m),
         fit_fn = fit_fn,
         controls = controls,
         naive_se = FALSE,
         verbose = FALSE
         ) %>%
-        mutate(pars = list(params), minor = params$minority)
+        mutate(pars = list(pg[ip, ]), minor = pg[ip, ]$minority)
     })
 
-  grid_opt <- grid_res %>%
+  go_ <- grid_res %>%
     group_by(term, controls) %>%
     mutate(max = max(estimate), min = min(estimate)) %>%
     filter(estimate == max | estimate == min) %>%
@@ -439,30 +439,20 @@ gridsens <-
     mutate(tag = paste(minor, ifelse(estimate == max, "max", "min"), sep = "_"))
 
   # Extract final results from optimized parameters
-  coefs <- furrr::future_map_dfr(1:nrow(grid_opt), function(ip) {
-    params <- grid_opt[ip, ] %>%
-      pull("pars") %>%
-      `[[`(1)
-
-    minor <- grid_opt[ip, ]$minor
-    tag <- grid_opt[ip, ]$tag
-
-    ret <- sensitivity(
-      pol,
-      compare = c(base_group, minor),
-      q = c(params$qb, params$qm),
-      dp = c(params$ab, params$am),
-      d0 = c(params$d0b, params$d0m),
-      d1 = c(params$d1b, params$d1m),
-      controls = controls,
-      naive_se = TRUE,
-      fit_fn = fit_fn,
-      verbose = FALSE
+  coefs <- furrr::future_map_dfr(1:nrow(go_), function(ip) {
+    sensitivity(
+        pol,
+        compare = c(base_group, go_[ip,]$minor),
+        q = c(go_[ip, ]$pars[[1]]$qb, go_[ip, ]$pars[[1]]$qm),
+        dp = c(go_[ip, ]$pars[[1]]$ab, go_[ip, ]$pars[[1]]$am),
+        d0 = c(go_[ip, ]$pars[[1]]$d0b, go_[ip, ]$pars[[1]]$d0m),
+        d1 = c(go_[ip, ]$pars[[1]]$d1b, go_[ip, ]$pars[[1]]$d1m),
+        controls = controls,
+        naive_se = TRUE,
+        fit_fn = fit_fn,
+        verbose = FALSE
       ) %>%
-      mutate(pars = list(params))
-
-    ret$tag <- tag
-    ret
+      mutate(pars = list(go_[ip, ]$pars[[1]]), tag = go_[ip, ]$tag)
   })
 
   base_case <- bind_rows(
