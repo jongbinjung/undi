@@ -65,7 +65,7 @@
 #'   \item{fit_ptreat}{function used to fit model for treatment propensity}
 #'   \item{pred_ptreat}{function used to generate predictions for treatment
 #'   propensity}\item{m_*}{if \code{save_models = TRUE}, each of the fitted
-#'   models; otherwise set to \code{NULL}}
+#'   models; otherwise set to \code{NULL}}\item{call}{the original call}
 #'
 #' @export
 policy <-
