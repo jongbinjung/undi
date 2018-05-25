@@ -6,7 +6,7 @@
 \usage{
 compute_rad(pol, controls = NULL, base_group = NULL,
   minority_groups = NULL, fit_fn = "logit_coef", down_sample = 1,
-  seed = round(stats::runif(1) * 10000), ...)
+  use_speedglm = TRUE, seed = round(stats::runif(1) * 10000), ...)
 }
 \arguments{
 \item{pol}{object of class policy}
@@ -31,6 +31,9 @@ expected)}
 \item{down_sample}{(Optional) proportion (between 0 and 1) or number (greater
 than 1) of rows to sample, if down sampling the (test) data; default is 1
 (i.e., use all data)}
+
+\item{use_speedglm}{whether or not to use \code{speedglm}, instead of
+\code{stats::glm}, in cases where N > 2P (see details)}
 
 \item{seed}{random seed to set}
 

@@ -33,6 +33,7 @@ Imports:
     ROCR,
     scales,
     sgd,
+    speedglm,
     stats,
     tidyr
 Remotes: 

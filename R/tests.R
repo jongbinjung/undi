@@ -29,6 +29,7 @@ compute_rad <-
            minority_groups = NULL,
            fit_fn = "logit_coef",
            down_sample = 1,
+           use_speedglm = TRUE,
            seed = round(stats::runif(1)*1e4),
            ...) {
     set.seed(seed)
@@ -37,7 +38,8 @@ compute_rad <-
     base_group <- groups$base
     minority_groups <- groups$minority
 
-    rc <- rad_control(pol, controls, fit_fn = fit_fn)
+    rc <- rad_control(pol, controls, fit_fn = fit_fn,
+                      use_speedglm = use_speedglm)
 
     d <- pol$data
 

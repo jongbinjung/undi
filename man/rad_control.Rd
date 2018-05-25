@@ -5,7 +5,7 @@
 \title{Given a policy and (optional) controls, generate a rad_control object}
 \usage{
 rad_control(pol, fit_fn = c("logit_coef", "logit_avg", "gam_avg"),
-  controls = NULL)
+  controls = NULL, use_speedglm = TRUE)
 }
 \arguments{
 \item{pol}{a \code{\link{policy}} object}
@@ -19,6 +19,9 @@ expected)}
 
 \item{controls}{character vector of additional controls to consider in the
 second-stage model}
+
+\item{use_speedglm}{whether or not to use \code{speedglm}, instead of
+\code{stats::glm}, in cases where N > 2P (see details)}
 }
 \value{
 a \code{rad_control} object constructed of \item{formula}{the formula
@@ -31,4 +34,11 @@ a \code{rad_control} object constructed of \item{formula}{the formula
 }
 \description{
 Given a policy and (optional) controls, generate a rad_control object
+}
+\details{
+speedglm can potentially speed-up computation significantly, but
+  only in cases where the number of rows is somewhat greater than the number
+  of features (specifically, when N > 2P). In terms of FLOPs at each Fisher
+  iteration, stats::glm requires (2np^2 - (2/3)p^3) FLOPS vs, (np^2 +
+  (4/3)p^3) for speedglm.
 }

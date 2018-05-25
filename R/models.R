@@ -54,6 +54,14 @@ models <- function() {
 #'   expected)
 #' @param controls character vector of additional controls to consider in the
 #'   second-stage model
+#' @param use_speedglm whether or not to use \code{speedglm}, instead of
+#'   \code{stats::glm}, in cases where N > 2P (see details)
+#'
+#' @details speedglm can potentially speed-up computation significantly, but
+#'   only in cases where the number of rows is somewhat greater than the number
+#'   of features (specifically, when N > 2P). In terms of FLOPs at each Fisher
+#'   iteration, stats::glm requires (2np^2 - (2/3)p^3) FLOPS vs, (np^2 +
+#'   (4/3)p^3) for speedglm.
 #'
 #' @return a \code{rad_control} object constructed of \item{formula}{the formula
 #'   used in model fitting} \item{label}{a character label associated with the
@@ -66,7 +74,8 @@ models <- function() {
 rad_control <-
   function(pol,
            fit_fn = c("logit_coef", "logit_avg", "gam_avg"),
-           controls = NULL) {
+           controls = NULL,
+           use_speedglm = TRUE) {
   fit_fn <- match.arg(fit_fn)
 
   switch (fit_fn,
@@ -80,18 +89,38 @@ rad_control <-
       ret <- list(
         formula = f,
         label = label,
-        fit = function(d, w = NULL, ...) {
-          if (is.null(w)) {
-            stats::glm(f, d, family = stats::quasibinomial, ...)
-          } else {
-            # Make sure that the weights exist in d at the time of call
-            d$w <- w
-            stats::glm(f, d, weights = w, family = stats::quasibinomial, ...)
-          }
-        },
+        fit = NA,
         pred = function() stop("Never call pred() on a coef method for rad!"),
         method = "coef"
       )
+
+      # FLOPs at each iteration:
+      #   stats::glm: 2np^2 - (2/3)p^3
+      #   speedglm: np^2 + (4/3)p^3
+      # Use stats::glm only if n < 2p
+      if (use_speedglm && nrow(pol$data) > 2 * length(feats)) {
+        ret$fit <- function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            speedglm::speedglm(f, d, family = stats::quasibinomial(), ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            speedglm::speedglm(f, d, weights = w,
+                               family = stats::quasibinomial(),
+                               ...)
+          }
+        }
+      } else {
+        ret$fit <- function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            stats::glm(f, d, family = stats::quasibinomial(), ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            stats::glm(f, d, weights = w, family = stats::quasibinomial(), ...)
+          }
+        }
+      }
     },
     logit_avg = {
       feats <- c(pol$grouping, "risk__", controls)
