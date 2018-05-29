@@ -97,9 +97,7 @@ sensitivity <-
 
     naive_coefs <- .compute_estimate(d = od, rc)
 
-    naive_coefs <- naive_coefs[, c("term", "std.error")] %>%
-      mutate(controls = paste(c(pol$grouping, "risk__", controls),
-                              collapse = ", "))
+    naive_coefs <- naive_coefs[, c("term", "std.error", "controls")]
   }
 
   sens_pol <- sensitize(pol, q = q, dp = dp, d0 = d0, d1 = d1,
@@ -150,7 +148,6 @@ sensitivity <-
   #     controls = paste(c(pol$grouping, 'risk__', controls), collapse = ", "))
   # }
 
-
   # Replace std.error with naive estimates
   coefs <- coefs[, c("term", "estimate", "std.error", "controls")]
 
@@ -168,7 +165,7 @@ sensitivity <-
   }
 
   ret
-  }
+}
 
 
 #' Compute the sensitivity-adjusted estimates of predicted outcome given
