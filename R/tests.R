@@ -173,7 +173,7 @@ compute_ot <- function(pol,
 
     if (rc$method == "coef") {
       coefs <- m %>%
-        broom::tidy() %>%
+        broom::tidy(parametric = TRUE) %>%
         mutate(method = rc$method, controls = rc$label)
 
       coefs[grepl(rc$grouping, coefs$term), ]

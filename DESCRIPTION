@@ -28,6 +28,7 @@ Imports:
     ggplot2,
     glmnet,
     lazyeval,
+    mgcv,
     purrr,
     rlang (>= 0.2.0),
     ROCR,

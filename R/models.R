@@ -73,7 +73,7 @@ models <- function() {
 #' @export
 rad_control <-
   function(pol,
-           fit_fn = c("logit_coef", "logit_avg", "gam_avg"),
+           fit_fn = c("logit_coef", "gam_coef", "logit_avg", "gam_avg"),
            controls = NULL,
            use_speedglm = TRUE) {
   fit_fn <- match.arg(fit_fn)
@@ -121,6 +121,31 @@ rad_control <-
           }
         }
       }
+    },
+    gam_coef = {
+      feats <- c(pol$grouping, "s(risk__)", controls)
+
+      f <- .make_formula(pol$treatment, feats)
+
+      label <- paste(feats, collapse = ", ")
+
+      ret <- list(
+        formula = f,
+        label = label,
+        fit = function(d, w = NULL, ...) {
+          if (is.null(w)) {
+            mgcv::gam(f, data = d, family = stats::quasibinomial(), ...)
+          } else {
+            # Make sure that the weights exist in d at the time of call
+            d$w <- w
+            mgcv::gam(f, data = d, weights = w, family = stats::quasibinomial(), ...)
+          }
+        },
+        pred = function(m, d) {
+          mgcv::predict.gam(m, d, type = "response")
+        },
+        method = "coef"
+      )
     },
     logit_avg = {
       feats <- c(pol$grouping, "risk__", controls)
