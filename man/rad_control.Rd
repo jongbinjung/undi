@@ -4,8 +4,8 @@
 \alias{rad_control}
 \title{Given a policy and (optional) controls, generate a rad_control object}
 \usage{
-rad_control(pol, fit_fn = c("logit_coef", "gam_coef", "logit_avg", "gam_avg"),
-  controls = NULL, use_speedglm = TRUE)
+rad_control(pol, fit_fn = c("logit_coef", "gam_coef", "decbin_coef",
+  "logit_avg", "gam_avg"), controls = NULL, use_speedglm = TRUE)
 }
 \arguments{
 \item{pol}{a \code{\link{policy}} object}
